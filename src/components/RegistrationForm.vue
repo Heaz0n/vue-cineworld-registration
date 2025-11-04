@@ -49,7 +49,7 @@
                   class="registration__input"
                   :class="{ 'registration__input--filled': formData.birthDate }"
                   placeholder="DD.MM.YYYY"
-                  readonly
+                  @click="openDatepicker"
                 >
                 <button 
                   v-if="formData.birthDate" 
@@ -206,32 +206,36 @@
 
         <!-- Checkboxes -->
         <div class="registration__checkboxes">
-          <label class="registration__checkbox">
-            <input
-              v-model="formData.subscribe"
-              type="checkbox"
-              class="registration__checkbox-input"
-            >
-            <span class="registration__checkbox-custom"></span>
-            <span class="registration__checkbox-text">
-              Subscribe to the latest updates of site materials
-            </span>
-          </label>
+          <div class="registration__checkbox-wrapper">
+            <label class="registration__checkbox">
+              <input
+                v-model="formData.subscribe"
+                type="checkbox"
+                class="registration__checkbox-input"
+              >
+              <span class="registration__checkbox-custom"></span>
+              <span class="registration__checkbox-text">
+                Subscribe to the latest updates of site materials
+              </span>
+            </label>
+          </div>
 
-          <label class="registration__checkbox">
-            <input
-              v-model="formData.agree"
-              type="checkbox"
-              class="registration__checkbox-input"
-              :class="{ 'registration__input--error': errors.agree }"
-              @change="clearError('agree')"
-            >
-            <span class="registration__checkbox-custom"></span>
-            <span class="registration__checkbox-text">
-              I accept the terms of the "Personal Data Processing Policy" and, for the purpose of establishing feedback with me, I consent to the processing of my personal data.
-            </span>
-          </label>
-          <span v-if="errors.agree" class="registration__error">
+          <div class="registration__checkbox-wrapper">
+            <label class="registration__checkbox">
+              <input
+                v-model="formData.agree"
+                type="checkbox"
+                class="registration__checkbox-input"
+                :class="{ 'registration__input--error': errors.agree }"
+                @change="clearError('agree')"
+              >
+              <span class="registration__checkbox-custom"></span>
+              <span class="registration__checkbox-text">
+                I accept the terms of the "Personal Data Processing Policy" and, for the purpose of establishing feedback with me, I consent to the processing of my personal data.
+              </span>
+            </label>
+          </div>
+          <span v-if="errors.agree" class="registration__error registration__error--checkbox">
             Please accept the terms and conditions
           </span>
         </div>
@@ -264,7 +268,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import AirDatepicker from 'air-datepicker'
 import 'air-datepicker/air-datepicker.css'
 
@@ -410,71 +414,145 @@ const resetForm = () => {
   isSubmitted.value = false
 }
 
+// Datepicker functions
+const openDatepicker = () => {
+  if (datepicker) {
+    datepicker.show()
+  }
+}
+
 // Datepicker initialization
 onMounted(() => {
-  datepicker = new AirDatepicker(dateInput.value, {
-    autoClose: true,
-    position: 'center',
-    onShow: () => {
-      document.body.style.overflow = 'hidden'
-    },
-    onHide: () => {
-      document.body.style.overflow = ''
-    },
-    onSelect: ({ date }) => {
-      const formattedDate = date.toLocaleDateString('ru-RU')
-      formData.birthDate = formattedDate
+  nextTick(() => {
+    if (dateInput.value) {
+      datepicker = new AirDatepicker(dateInput.value, {
+        autoClose: true,
+        position: 'bottom center',
+        container: 'body',
+        dateFormat: 'dd.MM.yyyy',
+        onShow: () => {
+          document.body.style.overflow = 'hidden'
+          addDatepickerStyles()
+        },
+        onHide: () => {
+          document.body.style.overflow = ''
+        },
+        onSelect: ({ date }) => {
+          if (date) {
+            const day = String(date.getDate()).padStart(2, '0')
+            const month = String(date.getMonth() + 1).padStart(2, '0')
+            const year = date.getFullYear()
+            formData.birthDate = `${day}.${month}.${year}`
+          }
+        }
+      })
+
+      // Add overlay click handler
+      const handleOverlayClick = (e) => {
+        if (e.target.classList.contains('air-datepicker-overlay')) {
+          datepicker.hide()
+        }
+      }
+
+      document.addEventListener('click', handleOverlayClick)
     }
   })
+})
 
-  // Add styles for datepicker overlay
+const addDatepickerStyles = () => {
+  // Check if styles already added
+  if (document.getElementById('datepicker-custom-styles')) {
+    return
+  }
+
   const style = document.createElement('style')
+  style.id = 'datepicker-custom-styles'
   style.textContent = `
     .air-datepicker-overlay {
       background: rgba(0, 0, 0, 0.5) !important;
-      z-index: 1000;
+      z-index: 10000 !important;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      cursor: pointer !important;
     }
+    
     .air-datepicker {
-      z-index: 1001;
+      z-index: 10001 !important;
       background: var(--bg-primary) !important;
       color: var(--text-primary) !important;
       border: 1px solid var(--border-color) !important;
       font-family: 'Space Mono', monospace !important;
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) !important;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+      border-radius: 8px !important;
     }
+    
     .air-datepicker-body--day-name {
       color: var(--text-secondary) !important;
       font-size: 14px !important;
       font-weight: 400 !important;
     }
+    
     .air-datepicker-cell.-day-.-other-month- {
       color: var(--text-secondary) !important;
     }
+    
     .air-datepicker-cell.-current- {
       color: var(--accent-color) !important;
     }
+    
     .air-datepicker-cell.-selected- {
       background: var(--accent-color) !important;
       color: white !important;
     }
+    
     .air-datepicker-nav--title {
       color: var(--text-primary) !important;
       font-size: 16px !important;
       font-weight: 700 !important;
     }
+    
     .air-datepicker-nav--action:hover {
       background: var(--bg-secondary) !important;
     }
+    
     .air-datepicker-cell.-focus- {
       background: var(--bg-secondary) !important;
     }
+    
+    .air-datepicker-cell.-day-:hover {
+      background: var(--bg-secondary) !important;
+    }
+    
+    .air-datepicker-nav--action path {
+      stroke: var(--text-primary) !important;
+    }
+    
+    .air-datepicker--pointer {
+      display: none !important;
+    }
   `
   document.head.appendChild(style)
-})
+}
 
 onUnmounted(() => {
   if (datepicker) {
     datepicker.destroy()
   }
+  // Remove event listener
+  const handleOverlayClick = (e) => {
+    if (e.target.classList.contains('air-datepicker-overlay')) {
+      datepicker?.hide()
+    }
+  }
+  document.removeEventListener('click', handleOverlayClick)
+  document.body.style.overflow = ''
 })
 </script>
 
@@ -498,7 +576,7 @@ onUnmounted(() => {
     font-size: 28px;
     font-weight: 700;
     line-height: 32px;
-    color: var(--text-primary);
+    color: #43098f; /* Фиксированный цвет #43098f для заголовка в обеих темах */
     margin-bottom: 2rem;
   }
 
@@ -552,6 +630,7 @@ onUnmounted(() => {
     transition: var(--transition);
     font-family: 'Space Mono', monospace;
     height: 56px;
+    cursor: pointer;
 
     &:focus {
       outline: none;
@@ -640,13 +719,25 @@ onUnmounted(() => {
     font-weight: 400;
     line-height: 140%;
     color: var(--error-color);
+
+    &--checkbox {
+      margin-top: 0.5rem;
+      display: block;
+    }
   }
 
   &__checkboxes {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.5rem;
     margin-bottom: 2rem;
+    margin-top: 1rem;
+  }
+
+  &__checkbox-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 
   &__checkbox {
@@ -689,7 +780,7 @@ onUnmounted(() => {
 
   &__checkbox-text {
     color: var(--text-primary);
-    line-height: 1.4;
+    line-height: 1.5;
     font-size: 14px;
     font-weight: 400;
   }
@@ -740,6 +831,8 @@ onUnmounted(() => {
   &__container {
     background: var(--bg-primary);
     padding: 3rem 2rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
   }
 
   &__title {
@@ -751,7 +844,7 @@ onUnmounted(() => {
   }
 
   &__message {
-    color: var(--text-primary);
+    color: #BD9BE9;
     margin-bottom: 2rem;
     line-height: 1.6;
     font-size: 16px;

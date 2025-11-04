@@ -3,18 +3,21 @@
     <header class="header">
       <div class="header__container">
         <div class="header__top">
-          <h1 class="header__logo">CineWorld</h1>
+          <div class="header__logo">
+            <img src="@/assets/logo.svg" alt="CineWorld" class="header__logo-image">
+            <h1 class="header__logo-text">CineWorld</h1>
+          </div>
           <button 
             class="theme-toggle"
             @click="toggleTheme"
             :aria-label="isDarkTheme ? 'Switch to light theme' : 'Switch to dark theme'"
           >
+            <div class="theme-toggle__slider" :class="{ 'theme-toggle__slider--active': !isDarkTheme }">
+              <span class="theme-toggle__knob"></span>
+            </div>
             <span class="theme-toggle__text">
               {{ isDarkTheme ? 'Light theme' : 'Dark theme' }}
             </span>
-            <div class="theme-toggle__slider" :class="{ 'theme-toggle__slider--active': isDarkTheme }">
-              <span class="theme-toggle__knob"></span>
-            </div>
           </button>
         </div>
       </div>
@@ -125,15 +128,28 @@ const toggleTheme = () => {
   }
 
   &__logo {
-    color: var(--accent-color);
-    font-size: 28px;
-    font-weight: 700;
-    line-height: 32px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     order: 1;
 
     @media (min-width: 768px) {
       order: 0;
     }
+  }
+
+  &__logo-image {
+    width: 32px;
+    height: 32px;
+    transition: var(--transition);
+  }
+
+  &__logo-text {
+    color: var(--accent-color);
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 32px;
+    margin: 0;
   }
 }
 
@@ -152,6 +168,7 @@ const toggleTheme = () => {
   font-family: 'Space Mono', monospace;
   font-size: 14px;
   font-weight: 400;
+  flex-direction: row;
 
   &:hover {
     transform: translateY(-2px);
