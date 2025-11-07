@@ -1,8 +1,7 @@
-# cineworld-registration
+# CineWorld - Форма регистрации
+Front-end разработка адаптивной формы регистрации для онлайн-платформы CineWorld.
 
-This template should help get you started developing with Vue 3 in Vite.
-
-## Recommended IDE Setup
+## 🚀 Технологии
 
 [VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
 
@@ -18,20 +17,18 @@ This template should help get you started developing with Vue 3 in Vite.
 ## Customize configuration
 
 See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
+### Установка зависимостей
+```
 npm install
 ```
 
-### Compile and Hot-Reload for Development
+### Запуск development сервера
 
 ```sh
 npm run dev
 ```
 
-### Compile and Minify for Production
+### Сборка для production
 
 ```sh
 npm run build
