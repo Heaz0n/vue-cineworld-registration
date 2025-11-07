@@ -4,7 +4,7 @@
       <div class="header__container">
         <div class="header__top">
           <div class="header__logo">
-            <img src="@/assets/logo.svg" alt="CineWorld" class="header__logo-image">
+            <img src="@/assets/logo/logo.svg" alt="CineWorld" class="header__logo-image">
             <h1 class="header__logo-text">CineWorld</h1>
           </div>
           <button 
@@ -35,7 +35,7 @@ import RegistrationForm from './components/RegistrationForm.vue'
 
 const isDarkTheme = ref(false)
 
-// Загрузка темы из localStorage
+
 onMounted(() => {
   const savedTheme = localStorage.getItem('cineworld-theme')
   if (savedTheme) {
@@ -65,7 +65,7 @@ const toggleTheme = () => {
   --bg-secondary: #ECF6FE;
   --text-primary: #242527;
   --text-secondary: #242527;
-  --border-color: #8F6CBC;
+  --border-color: #43098F;
   --accent-color: #440A8F;
   --accent-hover: #36156e;
   --success-color: #440A8F;
@@ -75,12 +75,16 @@ const toggleTheme = () => {
   --theme-color: #440A8F;
   --input-bg: #FFFFFF;
   --checkbox-bg: #FFFFFF;
+  --button-bg: #878D92;
+  --button-hover: #6c7378;
+  --input-text: #A185C7;
+  --placeholder-color: #A185C7;
 }
 
 .dark-theme {
   // Dark theme variables
-  --bg-primary: #000000;
-  --bg-secondary: #081D2F;
+  --bg-primary: #081D2F;
+  --bg-secondary: #000000;
   --text-primary: #BD9BE9;
   --text-secondary: #BD9BE9;
   --border-color: #AA70F5;
@@ -90,8 +94,12 @@ const toggleTheme = () => {
   --error-color: #E7472D;
   --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   --theme-color: #AA70F5;
-  --input-bg: #081D2F;
-  --checkbox-bg: #081D2F;
+  --input-bg: #000000;
+  --checkbox-bg: #000000;
+  --button-bg: #878D92;
+  --button-hover: #6c7378;
+  --input-text: #FFFFFF;
+  --placeholder-color: #FFFFFF;
 }
 
 #app {
@@ -102,11 +110,27 @@ const toggleTheme = () => {
   font-family: 'Space Mono', monospace;
 }
 
+.dark-theme #app {
+  font-family: inherit;
+}
+
 .header {
   background-color: var(--bg-primary);
-  border-bottom: 1px solid var(--border-color);
-  padding: 1.5rem 0;
+  padding: 1rem 0;
   transition: var(--transition);
+  position: relative;
+
+  /* Добавляем псевдоэлемент для линии */
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 40%;
+    transform: translateX(-40%);
+    width: 80%; /* Укорачиваем линию до 80% ширины */
+    height: 1px;
+    background-color: var(--border-color);
+  }
 
   &__container {
     max-width: 1200px;
@@ -117,7 +141,7 @@ const toggleTheme = () => {
   &__top {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     gap: 1rem;
 
     @media (min-width: 768px) {
@@ -150,13 +174,18 @@ const toggleTheme = () => {
     font-weight: 700;
     line-height: 32px;
     margin: 0;
+    font-family: 'Space Mono', monospace;
   }
+}
+
+.dark-theme .header__logo-text {
+  font-family: inherit;
 }
 
 .theme-toggle {
   background: none;
   border: none;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0;
   color: var(--text-primary);
   cursor: pointer;
   display: flex;
@@ -165,10 +194,16 @@ const toggleTheme = () => {
   transition: var(--transition);
   order: 2;
   background-color: var(--bg-primary);
-  font-family: 'Space Mono', monospace;
   font-size: 14px;
-  font-weight: 400;
+  font-weight: 700;
   flex-direction: row;
+  text-transform: none;
+  letter-spacing: normal;
+  font-family: inherit;
+
+  @media (min-width: 768px) {
+    padding: 0.5rem 1rem;
+  }
 
   &:hover {
     transform: translateY(-2px);
@@ -206,13 +241,20 @@ const toggleTheme = () => {
 
   &__text {
     font-size: 14px;
-    font-weight: 400;
+    font-weight: 700;
     white-space: nowrap;
+    text-transform: none;
+    letter-spacing: normal;
+    font-family: inherit;
+    
+    &::first-letter {
+      text-transform: uppercase;
+    }
   }
 }
 
 .main {
-  padding: 2rem 1rem;
+  padding: 1.5rem 1rem;
   max-width: 1200px;
   margin: 0 auto;
 }
