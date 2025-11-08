@@ -485,54 +485,54 @@
         </div>
 
         <!-- Checkboxes -->
-        <div class="registration__checkboxes">
-          <div class="registration__checkbox-wrapper">
-            <label class="registration__checkbox">
-              <input
-                v-model="formData.subscribe"
-                type="checkbox"
-                class="registration__checkbox-input"
-              >
-              <span class="registration__checkbox-custom">
-                <img 
-                  v-if="formData.subscribe" 
-                  :src="isDarkTheme ? vectorDark : vectorWhite" 
-                  alt="check" 
-                  class="registration__checkbox-icon"
-                >
-              </span>
-              <span class="registration__checkbox-text">
-                Subscribe to the latest updates of site materials
-              </span>
-            </label>
-          </div>
+<div class="registration__checkboxes">
+  <div class="registration__checkbox-wrapper">
+    <label class="registration__checkbox">
+      <input
+        v-model="formData.subscribe"
+        type="checkbox"
+        class="registration__checkbox-input"
+      >
+      <span class="registration__checkbox-custom">
+        <img 
+          v-if="formData.subscribe" 
+          :src="isDarkTheme ? vectorDark : vectorWhite" 
+          alt="check" 
+          class="registration__checkbox-icon"
+        >
+      </span>
+      <span class="registration__checkbox-text">
+        Subscribe to the latest updates of site materials
+      </span>
+    </label>
+  </div>
 
-          <div class="registration__checkbox-wrapper registration__checkbox-wrapper--agree">
-            <label class="registration__checkbox">
-              <input
-                v-model="formData.agree"
-                type="checkbox"
-                class="registration__checkbox-input"
-                :class="{ 'registration__input--error': showFieldError('agree') }"
-                @change="handleAgreeChange"
-              >
-              <span class="registration__checkbox-custom">
-                <img 
-                  v-if="formData.agree" 
-                  :src="isDarkTheme ? vectorDark : vectorWhite" 
-                  alt="check" 
-                  class="registration__checkbox-icon"
-                >
-              </span>
-              <span class="registration__checkbox-text">
-                I accept the terms of the "Personal Data Processing Policy" and, for the purpose of establishing feedback with me, I consent to the processing of my personal data.
-              </span>
-            </label>
-            <span v-if="showFieldError('agree') && showErrors.agree" class="registration__error registration__error--checkbox">
-              {{ errors.agree }}
-            </span>
-          </div>
-        </div>
+  <div class="registration__checkbox-wrapper registration__checkbox-wrapper--agree">
+    <label class="registration__checkbox">
+      <input
+        v-model="formData.agree"
+        type="checkbox"
+        class="registration__checkbox-input"
+        :class="{ 'registration__input--error': showFieldError('agree') }"
+        @change="handleAgreeChange"
+      >
+      <span class="registration__checkbox-custom">
+        <img 
+          v-if="formData.agree" 
+          :src="isDarkTheme ? vectorDark : vectorWhite" 
+          alt="check" 
+          class="registration__checkbox-icon"
+        >
+      </span>
+      <span class="registration__checkbox-text">
+        I accept the terms of the "Personal Data Processing Policy" and, for the purpose of establishing feedback with me, I consent to the processing of my personal data.
+      </span>
+    </label>
+    <span v-if="showFieldError('agree') && showErrors.agree" class="registration__error registration__error--checkbox">
+      {{ errors.agree }}
+    </span>
+  </div>
+</div>
 
         <!-- Submit Button -->
         <button
@@ -674,7 +674,6 @@ const validateName = (name) => {
   if (!name.trim()) return 'This field is required'
   if (name.length < 2) return 'Must be at least 2 characters'
   if (/\s/.test(name)) return 'No spaces allowed'
-  if (!/^[a-zA-Z]+$/.test(name)) return 'Only letters allowed'
   return ''
 }
 
@@ -789,34 +788,35 @@ const isFormValid = computed(() => {
                               formData.email && 
                               formData.password && 
                               formData.repeatPassword &&
-                              formData.birthDate &&
+                              
                               formData.agree
   
   return !hasErrors && requiredFieldsFilled && formData.password === formData.repeatPassword
 })
 
-// ИСПРАВЛЕННАЯ ФУНКЦИЯ: Отправка формы
+
 const submitForm = () => {
-  // Mark all fields as touched to show all errors
-  Object.keys(touched).forEach(key => {
-    touched[key] = true
-    showErrors[key] = true
+  // Пометить все обязательные поля как touched
+  const requiredFields = ['firstName', 'lastName', 'email', 'password', 'repeatPassword', 'agree']
+  requiredFields.forEach(field => {
+    touched[field] = true
+    showErrors[field] = true
   })
   
-  // Validate all fields
+  // Валидировать все поля
   validateField('firstName')
   validateField('lastName')
   validateField('email')
   validateField('password')
   validateField('repeatPassword')
-  validateField('birthDate')
   
-  // Validate agreement checkbox
+  // Проверить согласие
   if (!formData.agree) {
     errors.agree = 'You must agree to the terms and conditions'
-    showErrors.agree = true
-  } else {
-    errors.agree = ''
+  }
+
+  if (isFormValid.value) {
+    isSubmitted.value = true
   }
 
   // Check if form is valid
@@ -1368,7 +1368,7 @@ onUnmounted(() => {
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 
 .registration {
-  max-width: 900px;
+  max-width: 1100px;
   margin: 0 auto;
   position: relative;
 
@@ -1642,23 +1642,23 @@ onUnmounted(() => {
   }
 
   &__checkboxes {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-    margin-top: 1rem;
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  margin-top: 2rem;
+}
 
-  &__checkbox-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    
-    &--agree {
-      position: relative;
-      padding-bottom: 24px;
-    }
+&__checkbox-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  
+  &--agree {
+    position: relative;
+    padding-bottom: 24px;
   }
+}
 
   &__checkbox {
     display: flex;
