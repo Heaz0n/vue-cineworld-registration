@@ -55,7 +55,7 @@ npm -v
 ## Шаги запуска
 
 # 1. Клонирование репозитория
-     git clone (https://github.com/Heaz0n/vue-cineworld-registration)
+     git clone https://github.com/Heaz0n/vue-cineworld-registration
 
      cd cineworld-registration-form
 
