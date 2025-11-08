@@ -55,14 +55,17 @@ npm -v
 ## Шаги запуска
 
 # 1. Клонирование репозитория
-git clone [(https://github.com/Heaz0n/vue-cineworld-registration)]
-- cd cineworld-registration-form
+     git clone (https://github.com/Heaz0n/vue-cineworld-registration)
+
+     cd cineworld-registration-form
 
 # 2. Установка зависимостей
-- npm install
+
+     npm install
 
 # 3. Запуск dev-сервера
-- npm run dev
+  
+     npm run dev
 
 Откроется на http://localhost:5173
 Если порт занят — Vite предложит альтернативу
