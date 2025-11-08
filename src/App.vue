@@ -191,6 +191,10 @@ const toggleTheme = () => {
     height: 1.5px;
     background-color: var(--border-color);
  }
+ 
+  .dark-theme &::after {
+    background-color: #A96FF5;
+  }
 
   &__container {
     max-width: 1200px;

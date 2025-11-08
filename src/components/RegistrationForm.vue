@@ -592,7 +592,6 @@ const getDatepickerArrowRight = () => {
   return props.isDarkTheme ? arrowRightDark : arrowRightLight
 }
 
-
 // Reactive data
 const formData = reactive({
   firstName: '',
@@ -639,6 +638,8 @@ const showErrors = reactive({
 const isSubmitted = ref(false)
 const dateInput = ref(null)
 let datepicker = null
+let clickOutsideHandler = null
+let escapeHandler = null
 
 // ИСПРАВЛЕННАЯ ФУНКЦИЯ: Показывать красный индикатор только для незаполненных обязательных полей
 const showRequiredIndicator = (fieldName) => {
@@ -661,7 +662,6 @@ const showFieldError = (fieldName) => {
     return !formData.agree
   }
   
-  // ИСПРАВЛЕНА ОПЕЧАТКА: было ffieldName, стало fieldName
   if (['firstName', 'lastName', 'email', 'password', 'repeatPassword', 'birthDate'].includes(fieldName)) {
     return !formData[fieldName] && touched[fieldName]
   }
@@ -895,6 +895,76 @@ const updateDatepickerTheme = () => {
   }
 }
 
+// НОВАЯ ФУНКЦИЯ: Обработчик клика вне календаря
+const setupDatepickerCloseHandlers = () => {
+  if (!datepicker) return
+
+  // Удаляем старые обработчики если они есть
+  if (clickOutsideHandler) {
+    document.removeEventListener('mousedown', clickOutsideHandler)
+  }
+  if (escapeHandler) {
+    document.removeEventListener('keydown', escapeHandler)
+  }
+
+  // Обработчик клика вне календаря
+  clickOutsideHandler = (event) => {
+    if (!datepicker.visible) return
+
+    const datepickerEl = document.querySelector('.air-datepicker')
+    const inputEl = dateInput.value
+    
+    // Закрываем если клик был вне календаря и вне инпута
+    if (datepickerEl && 
+        !datepickerEl.contains(event.target) && 
+        event.target !== inputEl &&
+        !inputEl.contains(event.target)) {
+      datepicker.hide()
+    }
+  }
+
+  // Обработчик клавиши ESC
+  escapeHandler = (event) => {
+    if (event.key === 'Escape' && datepicker.visible) {
+      datepicker.hide()
+    }
+  }
+
+  document.addEventListener('mousedown', clickOutsideHandler)
+  document.addEventListener('keydown', escapeHandler)
+}
+
+// НОВАЯ ФУНКЦИЯ: Создание кастомного оверлея
+const createCustomOverlay = () => {
+  // Удаляем старый оверлей если есть
+  const oldOverlay = document.querySelector('.custom-datepicker-overlay')
+  if (oldOverlay) {
+    oldOverlay.remove()
+  }
+
+  // Создаем новый оверлей
+  const overlay = document.createElement('div')
+  overlay.className = 'custom-datepicker-overlay'
+  document.body.appendChild(overlay)
+
+  // Добавляем обработчик клика на оверлей
+  overlay.addEventListener('click', () => {
+    if (datepicker && datepicker.visible) {
+      datepicker.hide()
+    }
+  })
+
+  return overlay
+}
+
+// НОВАЯ ФУНКЦИЯ: Удаление кастомного оверлея
+const removeCustomOverlay = () => {
+  const overlay = document.querySelector('.custom-datepicker-overlay')
+  if (overlay) {
+    overlay.remove()
+  }
+}
+
 // Наблюдаем за изменением темы
 watch(() => props.isDarkTheme, () => {
   updateDatepickerTheme()
@@ -905,20 +975,28 @@ onMounted(() => {
   nextTick(() => {
     if (dateInput.value) {
       datepicker = new AirDatepicker(dateInput.value, {
-        autoClose: true, // Измените на true для автоматического закрытия
+        autoClose: false,
+        closeOnSelect: false,
         position: 'bottom center',
         container: 'body',
         dateFormat: 'dd.MM.yyyy',
         onShow: (isAnimationComplete) => {
           document.body.style.overflow = 'hidden'
+          
+          // ✅ СОЗДАЕМ КАСТОМНЫЙ ОВЕРЛЕЙ
+          createCustomOverlay()
           addDatepickerStyles()
           
           setTimeout(() => {
+            setupDatepickerCloseHandlers()
             updateDatepickerTheme()
           }, 10)
         },
         onHide: () => {
           document.body.style.overflow = ''
+          
+          // ✅ УДАЛЯЕМ КАСТОМНЫЙ ОВЕРЛЕЙ
+          removeCustomOverlay()
         },
         onSelect: ({ date }) => {
           if (date) {
@@ -979,6 +1057,9 @@ onMounted(() => {
         minView: 'days',
         classes: 'custom-datepicker'
       })
+
+      // ✅ Настраиваем обработчики закрытия после инициализации
+      setupDatepickerCloseHandlers()
     }
   })
 })
@@ -991,22 +1072,29 @@ const addDatepickerStyles = () => {
   const style = document.createElement('style')
   style.id = 'datepicker-custom-styles'
   style.textContent = `
-    .air-datepicker-overlay {
-      background: transparent !important;
-      z-index: 10000 !important;
+    /* === КАСТОМНЫЙ ОВЕРЛЕЙ === */
+    .custom-datepicker-overlay {
       position: fixed !important;
       top: 0 !important;
       left: 0 !important;
-      right: 0 !important;
-      bottom: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      background: rgba(0, 0, 0, 0.5) !important; /* ✅ Светлая тема: черный 50% */
+      backdrop-filter: blur(2px) !important;
+      z-index: 9999 !important;
       cursor: pointer !important;
-      backdrop-filter: none !important;
-      transition: background 0.3s ease !important;
+      transition: all 0.3s ease !important;
     }
 
-    /* === СВЕТЛАЯ ТЕМА КАЛЕНДАРЯ (БЕЛЫЙ ФОН) === */
+    /* Для темной темы - фиолетовый фон #615B8A с разной прозрачностью */
+    .dark-theme .custom-datepicker-overlay {
+      background: rgba(97, 91, 138, 0.6) !important; /* ✅ Темная тема: фиолетовый #615B8A 60% */
+    }
+
+
+    /* === СТИЛИ КАЛЕНДАРЯ === */
     .air-datepicker {
-      z-index: 10001 !important;
+      z-index: 10000 !important;
       background: #FFFFFF !important;
       color: #242527 !important;
       border: 1px solid #43098F !important;
@@ -1021,7 +1109,7 @@ const addDatepickerStyles = () => {
       width: 320px !important;
     }
 
-    /* === ТЕМНАЯ ТЕМА КАЛЕНДАРЯ (ЧЕРНЫЙ ФОН) === */
+    /* === ТЕМНАЯ ТЕМА КАЛЕНДАРЯ === */
     .air-datepicker.dark-theme {
       background: #000000 !important;
       border-color: #AA70F5 !important;
@@ -1035,55 +1123,45 @@ const addDatepickerStyles = () => {
     }
 
     /* === НАСТРОЙКИ ДЛЯ ТЕМНОЙ ТЕМЫ === */
-
-    /* МЕСЯЦ И ГОД в темной теме */
     .air-datepicker.dark-theme .air-datepicker-nav--title {
-      color: #BC9AE8 !important;  /* Фиолетовый цвет для месяца и года */
+      color: #BC9AE8 !important;
       background: #000000 !important;
     }
 
-    /* ДНИ НЕДЕЛИ (Пн, Вт, Ср...) в темной теме */
     .air-datepicker.dark-theme .air-datepicker-body--day-name {
-      color: #FFFFFF !important;  /* Белый цвет для дней недели */
+      color: #FFFFFF !important;
       background: #000000 !important;
     }
 
-    /* ЦИФРЫ ДНЕЙ в темной теме - ОБЫЧНЫЕ */
     .air-datepicker.dark-theme .air-datepicker-cell.-day- {
-      color: #A96FF5 !important;        /* Фиолетовый цвет обычных цифр */
+      color: #A96FF5 !important;
       background: #000000 !important;
-      font-weight: 700 !important;      /* Жирный шрифт */
+      font-weight: 700 !important;
     }
 
-    /* ЦИФРЫ ДНЕЙ ДРУГИХ МЕСЯЦЕВ в темной теме */
     .air-datepicker.dark-theme .air-datepicker-cell.-day-.-other-month- {
-      color: #BD9BE9 !important;        /* Светло-фиолетовый цвет */
-      opacity: 0.4 !important;          /* Полупрозрачность */
-      font-weight: 300 !important;      /* Более тонкий шрифт */
+      color: #BD9BE9 !important;
+      opacity: 0.4 !important;
+      font-weight: 300 !important;
     }
 
-    /* КНОПКИ в темной теме */
     .air-datepicker.dark-theme .air-datepicker--buttons {
       border-color: rgba(170, 112, 245, 0.3) !important;
     }
 
     .air-datepicker.dark-theme .air-datepicker--buttons span {
-      color: #AA70F5 !important;  /* Фиолетовый цвет текста кнопок */
+      color: #AA70F5 !important;
     }
 
-    /* КНОПКИ НАВИГАЦИИ при наведении в темной теме */
     .air-datepicker.dark-theme .air-datepicker-nav--action:hover {
       background: #AA70F5 !important;
     }
 
-    /* ЯЧЕЙКИ ДНЕЙ при наведении в темной теме */
     .air-datepicker.dark-theme .air-datepicker-cell.-day-:hover {
-      background: rgba(170, 112, 245, 0.1) !important;  /* Светло-фиолетовый фон */
+      background: rgba(170, 112, 245, 0.1) !important;
     }
 
-    /* === ВЫДЕЛЕННЫЕ ЯЧЕЙКИ (для обеих тем) === */
-
-    /* Фон для выделенных ячеек (текущий день, выбранный день) */
+    /* === ВЫДЕЛЕННЫЕ ЯЧЕЙКИ === */
     .air-datepicker-cell.-current-::before,
     .air-datepicker-cell.-selected-::before {
       content: '' !important;
@@ -1097,33 +1175,25 @@ const addDatepickerStyles = () => {
       z-index: -1 !important;
     }
 
-    /* === СВЕТЛАЯ ТЕМА: ВЫДЕЛЕННЫЕ ЯЧЕЙКИ === */
-    
-    /* Текущий день в светлой теме: квадрат #8E6BBC, цифра БЕЛАЯ */
+    /* Светлая тема: выделенные ячейки */
     .air-datepicker-cell.-current-::before {
-      background: #8E6BBC !important;  /* Светло-фиолетовый квадрат для текущего дня */
+      background: #8E6BBC !important;
     }
     
-    /* Выбранная дата в светлой теме: квадрат #43098F, цифра БЕЛАЯ */
     .air-datepicker-cell.-selected-::before {
-      background: #43098F !important;  /* Темно-фиолетовый квадрат для выбранной даты */
+      background: #43098F !important;
     }
 
-    /* === ТЕМНАЯ ТЕМА: ВЫДЕЛЕННЫЕ ЯЧЕЙКИ === */
-    
-    /* Текущий день в темной теме: квадрат БЕЛЫЙ, цифра ЧЕРНАЯ */
+    /* Темная тема: выделенные ячейки */
     .air-datepicker.dark-theme .air-datepicker-cell.-current-::before {
-      background: #FFFFFF !important;  /* БЕЛЫЙ квадрат для текущего дня */
+      background: #FFFFFF !important;
     }
     
-    /* Выбранная дата в темной теме: квадрат #AA70F5, цифра ЧЕРНАЯ */
     .air-datepicker.dark-theme .air-datepicker-cell.-selected-::before {
-      background: #AA70F5 !important;  /* Фиолетовый квадрат для выбранной даты */
+      background: #AA70F5 !important;
     }
 
-    /* === ЦВЕТ ЦИФР ВЫДЕЛЕННЫХ ЯЧЕЕК === */
-    
-    /* СВЕТЛАЯ ТЕМА: БЕЛЫЕ цифры выделенных дней */
+    /* Цвет цифр выделенных ячеек */
     .air-datepicker-cell.-current-,
     .air-datepicker-cell.-selected-,
     .air-datepicker-cell.-current-.-selected-,
@@ -1132,14 +1202,13 @@ const addDatepickerStyles = () => {
     .air-datepicker-cell.-current-.-other-month-,
     .air-datepicker-cell.-day-.-current-,
     .air-datepicker-cell.-day-.-selected- {
-      color: #FFFFFF !important;        /* БЕЛЫЙ цвет цифр выделенных дней в светлой теме */
-      font-weight: 700 !important;      /* Жирный шрифт выделенных дней */
+      color: #FFFFFF !important;
+      font-weight: 700 !important;
       background: transparent !important;
       position: relative !important;
       z-index: 1 !important;
     }
 
-    /* ТЕМНАЯ ТЕМА: ЧЕРНЫЕ цифры выделенных дней */
     .air-datepicker.dark-theme .air-datepicker-cell.-current-,
     .air-datepicker.dark-theme .air-datepicker-cell.-selected-,
     .air-datepicker.dark-theme .air-datepicker-cell.-current-.-selected-,
@@ -1148,39 +1217,20 @@ const addDatepickerStyles = () => {
     .air-datepicker.dark-theme .air-datepicker-cell.-current-.-other-month-,
     .air-datepicker.dark-theme .air-datepicker-cell.-day-.-current-,
     .air-datepicker.dark-theme .air-datepicker-cell.-day-.-selected- {
-      color: #000000 !important;        /* ЧЕРНЫЙ цвет цифр выделенных дней в темной теме */
+      color: #000000 !important;
     }
 
-    /* Фон для комбинированных состояний в светлой теме */
-    .air-datepicker-cell.-current-.-selected-::before,
-    .air-datepicker-cell.-selected-.-other-month-::before,
-    .air-datepicker-cell.-current-.-other-month-::before {
-      background: #43098F !important;  /* Темно-фиолетовый для комбинированных */
-    }
-
-    /* Фон для комбинированных состояний в темной теме */
-    .air-datepicker.dark-theme .air-datepicker-cell.-current-.-selected-::before,
-    .air-datepicker.dark-theme .air-datepicker-cell.-selected-.-other-month-::before,
-    .air-datepicker.dark-theme .air-datepicker-cell.-current-.-other-month-::before {
-      background: #AA70F5 !important;  /* Фиолетовый для комбинированных состояний */
-    }
-
-    /* === СВЕТЛАЯ ТЕМА: ЦВЕТА ОБЫЧНЫХ ЦИФР === */
-    
-    /* Обычные дни в светлой теме */
+    /* Обычные дни */
     .air-datepicker-cell.-day- {
-      color: #43098F !important;  /* Темно-фиолетовые цифры */
+      color: #43098F !important;
     }
 
-    /* Дни других месяцев в светлой теме */
     .air-datepicker-cell.-day-.-other-month- {
-      color: #8E6BBC !important;  /* Светло-фиолетовые цифры */
-      opacity: 0.5 !important;    /* Полупрозрачность */
+      color: #8E6BBC !important;
+      opacity: 0.5 !important;
     }
 
-    /* === ОБЩИЕ СТИЛИ ДЛЯ ВСЕХ ТЕМ === */
-
-    /* Стили для SVG стрелок в календаре */
+    /* Стили для стрелок */
     .datepicker-arrow {
       width: 12px;
       height: 12px;
@@ -1197,7 +1247,6 @@ const addDatepickerStyles = () => {
       position: relative !important;
     }
     
-    /* Заголовок (месяц и год) в светлой теме */
     .air-datepicker-nav--title {
       color: #242527 !important;
       font-size: 16px !important;
@@ -1208,7 +1257,6 @@ const addDatepickerStyles = () => {
       text-transform: uppercase !important;
     }
     
-    /* Кнопки навигации */
     .air-datepicker-nav--action {
       border-radius: 4px !important;
       width: 32px !important;
@@ -1228,24 +1276,20 @@ const addDatepickerStyles = () => {
       order: 3 !important;
     }
     
-    /* Кнопки навигации при наведении в светлой теме */
     .air-datepicker-nav--action:hover {
       background: #43098F !important;
     }
     
-    /* Тело календаря */
     .air-datepicker-body {
       padding: 0 !important;
     }
     
-    /* Заголовки дней недели */
     .air-datepicker-body--day-names {
       margin: 15px 0 10px 0 !important;
       padding: 0 !important;
       border: none !important;
     }
     
-    /* Дни недели в светлой теме */
     .air-datepicker-body--day-name {
       color: #242527 !important;
       font-size: 12px !important;
@@ -1258,7 +1302,6 @@ const addDatepickerStyles = () => {
       justify-content: center !important;
     }
     
-    /* Общие стили для всех ячеек */
     .air-datepicker-cell {
       height: 32px !important;
       font-size: 14px !important;
@@ -1269,22 +1312,18 @@ const addDatepickerStyles = () => {
       position: relative !important;
     }
     
-    /* Фокус в светлой теме */
     .air-datepicker-cell.-day-.-focus- {
       background: #ECF6FE !important;
     }
     
-    /* Ховер в светлой теме */
     .air-datepicker-cell.-day-:hover {
       background: #ECF6FE !important;
     }
     
-    /* Убираем указатель */
     .air-datepicker--pointer {
       display: none !important;
     }
 
-    /* Кнопки очистки/применения */
     .air-datepicker--buttons {
       border-top: 1px solid #ECF6FE !important;
       padding-top: 15px !important;
@@ -1306,17 +1345,21 @@ const addDatepickerStyles = () => {
   document.head.appendChild(style)
 }
 
-
 onUnmounted(() => {
+  // ✅ Удаляем обработчики при размонтировании компонента
+  if (clickOutsideHandler) {
+    document.removeEventListener('mousedown', clickOutsideHandler)
+  }
+  if (escapeHandler) {
+    document.removeEventListener('keydown', escapeHandler)
+  }
+  
+  // ✅ Удаляем кастомный оверлей
+  removeCustomOverlay()
+  
   if (datepicker) {
     datepicker.destroy()
   }
-  const handleOverlayClick = (e) => {
-    if (e.target.classList.contains('air-datepicker-overlay')) {
-      datepicker?.hide()
-    }
-  }
-  document.removeEventListener('click', handleOverlayClick)
   document.body.style.overflow = ''
 })
 </script>
@@ -1740,32 +1783,33 @@ onUnmounted(() => {
 }
 
 .success {
-  text-align: center;
-  margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 60vh;
   width: 100%;
-  max-width: none;
+  text-align: center;
 
   &__container {
-    background: transparent;
-    padding: 0;
-    border-radius: 0;
-    box-shadow: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
     width: 100%;
     max-width: 500px;
+    padding: 2rem;
+    transform: translateY(40px); /* ✅ Опускаем блок на 40px вниз */
   }
 
   &__message {
     color: var(--success-message-color, #43098F);
-    margin-bottom: 2rem;
-    line-height: 1.2;
     font-size: 28px;
     font-weight: 1000;
-    font-family: 'Space Mono', monospace !important;
+    font-family: 'Space Mono', monospace;
+    line-height: 1.3;
     text-align: center;
+    margin: 0;
   }
 
   :deep(.dark-theme) .success__message {
@@ -1773,7 +1817,7 @@ onUnmounted(() => {
   }
 
   &__button {
-    padding: 1.25rem 2rem;
+    padding: 1.25rem 2.5rem;
     background: var(--accent-color);
     color: #FFFFFF;
     border: none;
@@ -1786,10 +1830,8 @@ onUnmounted(() => {
     text-transform: uppercase;
     letter-spacing: 1px;
     font-family: 'Space Mono', monospace;
-    height: 60px;
-    margin: 0 auto;
-    display: block;
-
+    min-width: 220px;
+    
     &:hover {
       background: var(--accent-hover);
       transform: translateY(-2px);
