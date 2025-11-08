@@ -35,7 +35,6 @@ import RegistrationForm from './components/RegistrationForm.vue'
 
 const isDarkTheme = ref(false)
 
-
 onMounted(() => {
   const savedTheme = localStorage.getItem('cineworld-theme')
   if (savedTheme) {
@@ -47,6 +46,19 @@ onMounted(() => {
 const toggleTheme = () => {
   isDarkTheme.value = !isDarkTheme.value
   localStorage.setItem('cineworld-theme', isDarkTheme.value ? 'dark' : 'light')
+  
+  // Принудительно обновляем календарь если он открыт
+  setTimeout(() => {
+    const datepickerElement = document.querySelector('.air-datepicker')
+    
+    if (datepickerElement) {
+      if (isDarkTheme.value) {
+        datepickerElement.classList.add('dark-theme')
+      } else {
+        datepickerElement.classList.remove('dark-theme')
+      }
+    }
+  }, 10)
 }
 </script>
 
@@ -60,46 +72,103 @@ const toggleTheme = () => {
 }
 
 :root {
-  // Light theme variables
-  --bg-primary: #FFFFFF;
+  // Цвета фона
+  --bg-primary: #ECF6FE;
   --bg-secondary: #ECF6FE;
-  --text-primary: #242527;
-  --text-secondary: #242527;
-  --border-color: #43098F;
-  --accent-color: #440A8F;
-  --accent-hover: #36156e;
-  --success-color: #440A8F;
-  --error-color: #E7472D;
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  --transition: all 0.35s ease;
-  --theme-color: #440A8F;
   --input-bg: #FFFFFF;
   --checkbox-bg: #FFFFFF;
-  --button-bg: #878D92;
-  --button-hover: #6c7378;
+  
+  // Цвета текста
+  --text-primary: #242527;
+  --text-secondary: #242527;
   --input-text: #A185C7;
   --placeholder-color: #A185C7;
+  
+  // Акцентные цвета
+  --accent-color: #440A8F;
+  --accent-hover: #36156e;
+  --border-color: #A96FF5;
+  --theme-color: #440A8F;
+  --success-color: #440A8F;
+  
+  
+  // Системные цвета
+  --error-color: #E7472D;
+  
+  // Цвета кнопок
+  --button-bg: #878D92;
+  --button-hover: #6c7378;
+  
+  // Эффекты
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dark-theme {
-  // Dark theme variables
+  // Цвета фона
   --bg-primary: #081D2F;
   --bg-secondary: #000000;
-  --text-primary: #BD9BE9;
-  --text-secondary: #BD9BE9;
-  --border-color: #AA70F5;
-  --accent-color: #AA70F5;
-  --accent-hover: #BD9BE9;
-  --success-color: #AA70F5;
-  --error-color: #E7472D;
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --theme-color: #AA70F5;
   --input-bg: #000000;
   --checkbox-bg: #000000;
-  --button-bg: #878D92;
-  --button-hover: #6c7378;
+  
+  // Цвета текста
+  --text-primary: #BD9BE9;
+  --text-secondary: #BD9BE9;
   --input-text: #FFFFFF;
   --placeholder-color: #FFFFFF;
+  
+  // Акцентные цвета
+  --accent-color: #AA70F5;
+  --accent-hover: #BD9BE9;
+  --border-color: #FFFFFF;
+  --theme-color: #AA70F5;
+  --success-color: #AA70F5;
+  --success-message-color: #A96FF5;
+  
+  // Системные цвета (остаются теми же)
+  --error-color: #E7472D;
+  
+  // Цвета кнопок (остаются теми же)
+  --button-bg: #878D92;
+  --button-hover: #6c7378;
+  
+  // Эффекты
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+
+  // Стили для кнопок в темной теме - ЧЕРНЫЙ ТЕКСТ
+  .registration__button:not(.registration__button--disabled) {
+    background: #a96ff5 !important;
+    color: #000000 !important;
+    
+    &:hover {
+      background: #524C7A !important;
+      color: #000000 !important;
+    }
+  }
+
+  // ИСПРАВЛЕНО: неактивная кнопка - цвет #615B8A и черный текст
+  .registration__button--disabled {
+    background: #a96ff5 !important;
+    color: #000000 !important;
+    
+    &:hover {
+      background: #a96ff5 !important;
+      color: #000000 !important;
+    }
+  }
+
+  .success__button {
+    background: #a96ff5 !important;
+    color: #000000 !important;
+    
+    &:hover {
+      background: #524C7A !important;
+      color: #000000 !important;
+    }
+  }
 }
 
 #app {
@@ -120,17 +189,16 @@ const toggleTheme = () => {
   transition: var(--transition);
   position: relative;
 
-  /* Добавляем псевдоэлемент для линии */
   &::after {
     content: '';
     position: absolute;
     bottom: 0;
     left: 40%;
     transform: translateX(-40%);
-    width: 80%; /* Укорачиваем линию до 80% ширины */
-    height: 1px;
+    width: 95%;
+    height: 1.5px;
     background-color: var(--border-color);
-  }
+ }
 
   &__container {
     max-width: 1200px;
@@ -195,7 +263,7 @@ const toggleTheme = () => {
   order: 2;
   background-color: var(--bg-primary);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 500;
   flex-direction: row;
   text-transform: none;
   letter-spacing: normal;
@@ -241,7 +309,8 @@ const toggleTheme = () => {
 
   &__text {
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 800;
+    color: var(--accent-color);
     white-space: nowrap;
     text-transform: none;
     letter-spacing: normal;
@@ -253,9 +322,41 @@ const toggleTheme = () => {
   }
 }
 
+/* Темная тема для слайдера */
+.dark-theme .theme-toggle__slider {
+  background-color: #A96FF5 !important;
+}
+
+.dark-theme .theme-toggle__slider--active {
+  background-color: #A96FF5 !important;
+}
+
 .main {
   padding: 1.5rem 1rem;
   max-width: 1200px;
   margin: 0 auto;
+}
+
+/* Анимации */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 </style>

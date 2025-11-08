@@ -169,7 +169,7 @@
                     'registration__input--error': showFieldError('password'),
                     'registration__input--filled': formData.password
                   }"
-                  placeholder="•••••••••••••••"
+                  placeholder="*******"
                   @blur="handleBlur('password')"
                   @input="handleInput('password')"
                   @focus="handleFocus('password')"
@@ -206,7 +206,7 @@
                     'registration__input--error': showFieldError('repeatPassword'),
                     'registration__input--filled': formData.repeatPassword
                   }"
-                  placeholder="•••••••••••••••"
+                  placeholder="*******"
                   @blur="handleBlur('repeatPassword')"
                   @input="handleInput('repeatPassword')"
                   @focus="handleFocus('repeatPassword')"
@@ -320,7 +320,7 @@
                     'registration__input--error': showFieldError('password'),
                     'registration__input--filled': formData.password
                   }"
-                  placeholder="•••••••••••••••"
+                  placeholder="*******"
                   @blur="handleBlur('password')"
                   @input="handleInput('password')"
                   @focus="handleFocus('password')"
@@ -433,7 +433,7 @@
                     'registration__input--error': showFieldError('repeatPassword'),
                     'registration__input--filled': formData.repeatPassword
                   }"
-                  placeholder="•••••••••••••••"
+                  placeholder="*******"
                   @blur="handleBlur('repeatPassword')"
                   @input="handleInput('repeatPassword')"
                   @focus="handleFocus('repeatPassword')"
@@ -463,18 +463,25 @@
         <!-- Select Genre -->
         <div class="registration__field">
           <label class="registration__label">Select your favourite genre</label>
-          <select
-            v-model="formData.favoriteGenre"
-            class="registration__select"
-            :class="{ 'registration__select--filled': formData.favoriteGenre }"
-          >
-            <option value="">Favorite genre</option>
-            <option value="adventure">Adventure</option>
-            <option value="comedy">Comedy</option>
-            <option value="horror">Horror</option>
-            <option value="documentary">Documentary</option>
-            <option value="cartoon">Cartoon</option>
-          </select>
+          <div class="registration__select-wrapper">
+            <select
+              v-model="formData.favoriteGenre"
+              class="registration__select"
+              :class="{ 'registration__select--filled': formData.favoriteGenre }"
+            >
+              <option value="">Favorite genre</option>
+              <option value="adventure">Adventure</option>
+              <option value="comedy">Comedy</option>
+              <option value="horror">Horror</option>
+              <option value="documentary">Documentary</option>
+              <option value="cartoon">Cartoon</option>
+            </select>
+            <div class="registration__select-arrow">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
         </div>
 
         <!-- Checkboxes -->
@@ -493,7 +500,7 @@
             </label>
           </div>
 
-          <div class="registration__checkbox-wrapper">
+          <div class="registration__checkbox-wrapper registration__checkbox-wrapper--agree">
             <label class="registration__checkbox">
               <input
                 v-model="formData.agree"
@@ -507,10 +514,10 @@
                 I accept the terms of the "Personal Data Processing Policy" and, for the purpose of establishing feedback with me, I consent to the processing of my personal data.
               </span>
             </label>
+            <span v-if="showFieldError('agree') && showErrors.agree" class="registration__error registration__error--checkbox">
+              {{ errors.agree }}
+            </span>
           </div>
-          <span v-if="showFieldError('agree') && showErrors.agree" class="registration__error registration__error--checkbox">
-            {{ errors.agree }}
-          </span>
         </div>
 
         <!-- Submit Button -->
@@ -543,6 +550,24 @@
 import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import AirDatepicker from 'air-datepicker'
 import 'air-datepicker/air-datepicker.css'
+
+// Импорты SVG файлов для стрелок календаря
+import arrowLeftLight from '@/assets/images/arrow-left-light.svg'
+import arrowRightLight from '@/assets/images/arrow-right-light.svg'
+import arrowLeftDark from '@/assets/images/arrow-left-dark.svg'
+import arrowRightDark from '@/assets/images/arrow-right-dark.svg'
+
+// Получаем текущую тему из родительского компонента
+const isDarkTheme = ref(false)
+
+// Функции для получения правильных стрелок
+const getDatepickerArrowLeft = () => {
+  return isDarkTheme.value ? arrowLeftDark : arrowLeftLight
+}
+
+const getDatepickerArrowRight = () => {
+  return isDarkTheme.value ? arrowRightDark : arrowRightLight
+}
 
 // Reactive data
 const formData = reactive({
@@ -603,7 +628,7 @@ const showRequiredIndicator = (fieldName) => {
   return false
 }
 
-// СТАРАЯ ФУНКЦИЯ: Для текстовых ошибок (оставляем без изменений)
+// ИСПРАВЛЕННАЯ ФУНКЦИЯ: Для текстовых ошибок
 const showFieldError = (fieldName) => {
   // Показывать ошибку только если поле было затронуто И есть ошибка
   if (!touched[fieldName]) return false
@@ -612,6 +637,7 @@ const showFieldError = (fieldName) => {
     return !formData.agree
   }
   
+  // ИСПРАВЛЕНА ОПЕЧАТКА: было ffieldName, стало fieldName
   if (['firstName', 'lastName', 'email', 'password', 'repeatPassword', 'birthDate'].includes(fieldName)) {
     return !formData[fieldName] && touched[fieldName]
   }
@@ -708,7 +734,6 @@ const handleFocus = (fieldName) => {
   showErrors[fieldName] = false
 }
 
-// ИСПРАВЛЕННАЯ ФУНКЦИЯ: Была опечатка ffieldName
 const handleBlur = (fieldName) => {
   touched[fieldName] = true
   validateField(fieldName)
@@ -781,12 +806,6 @@ const submitForm = () => {
   
   if (!hasValidationErrors && requiredFieldsFilled) {
     isSubmitted.value = true
-  } else {
-    console.log('Form validation failed:', {
-      errors,
-      requiredFieldsFilled,
-      formData
-    })
   }
 }
 
@@ -827,84 +846,98 @@ const openDatepicker = () => {
   }
 }
 
+// ИСПРАВЛЕННАЯ ФУНКЦИЯ: Форматирование даты в формат DD.MM.YYYY
+const formatDate = (date) => {
+  if (!date) return ''
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = date.getFullYear()
+  return `${day}.${month}.${year}`
+}
+
 // Datepicker initialization
 onMounted(() => {
   nextTick(() => {
     if (dateInput.value) {
       datepicker = new AirDatepicker(dateInput.value, {
-        autoClose: true,
+        autoClose: false,
         position: 'bottom center',
         container: 'body',
-        dateFormat: 'dd MMMM yyyy',
-        onShow: () => {
+        dateFormat: 'dd.MM.yyyy',
+        onShow: (isAnimationComplete) => {
           document.body.style.overflow = 'hidden'
           addDatepickerStyles()
+          
+          // Принудительно применяем тему к календарю
+          setTimeout(() => {
+            const appElement = document.getElementById('app')
+            const datepickerElement = document.querySelector('.air-datepicker')
+            
+            if (appElement && appElement.classList.contains('dark-theme')) {
+              isDarkTheme.value = true
+              if (datepickerElement) {
+                datepickerElement.classList.add('dark-theme')
+                document.body.classList.add('dark-theme-datepicker')
+              }
+            } else {
+              isDarkTheme.value = false
+              if (datepickerElement) {
+                datepickerElement.classList.remove('dark-theme')
+                document.body.classList.remove('dark-theme-datepicker')
+              }
+            }
+          }, 10)
         },
         onHide: () => {
           document.body.style.overflow = ''
+          document.body.classList.remove('dark-theme-datepicker')
         },
         onSelect: ({ date }) => {
           if (date) {
-            const day = String(date.getDate()).padStart(2, '0')
-            const monthNames = [
-              'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
-              'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
-            ]
-            const month = monthNames[date.getMonth()]
-            const year = date.getFullYear()
-            formData.birthDate = `${day} ${month} ${year}`
-            // Validate birth date after selection
+            formData.birthDate = formatDate(date)
             touched.birthDate = true
             validateField('birthDate')
           }
         },
-        // Настройки для английского языка
         locale: {
           days: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
           daysShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
           daysMin: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
           months: [
-            'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
-            'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
           ],
           monthsShort: [
-            'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-            'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'
+            'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
           ],
           today: 'Today',
           clear: 'Clear',
-          dateFormat: 'dd MMMM yyyy',
+          dateFormat: 'dd.MM.yyyy',
           timeFormat: 'hh:mm aa',
           firstDay: 1
         },
         monthsField: 'monthsShort',
-        prevHtml: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.5 9L4.5 6L7.5 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-        nextHtml: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 3L7.5 6L4.5 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-        // Английские названия месяцев
+        // Используем правильные SVG файлы для стрелок в зависимости от темы
+        prevHtml: `<img src="${getDatepickerArrowLeft()}" alt="prev" class="datepicker-arrow">`,
+        nextHtml: `<img src="${getDatepickerArrowRight()}" alt="next" class="datepicker-arrow">`,
         months: [
-          'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
-          'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
+          'January', 'February', 'March', 'April', 'May', 'June',
+          'July', 'August', 'September', 'October', 'November', 'December'
         ],
-        // Английские дни недели
         days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'],
-        // Стрелки справа
         navTitles: {
           days: 'MMMM yyyy',
           months: 'yyyy',
           years: 'yyyy1 - yyyy2'
         },
-        // Отключение множественного нажатия
         multipleDates: false,
-        // Разрешить очистку даты
         clearButton: true,
-        // Включить выбор месяцев
         view: 'days',
         minView: 'days',
-        // Цвета для светлой и темной темы
         classes: 'custom-datepicker'
       })
 
-      // Добавляем обработчик клика по оверлею
       const handleOverlayClick = (e) => {
         if (e.target.classList.contains('air-datepicker-overlay')) {
           datepicker.hide()
@@ -917,7 +950,6 @@ onMounted(() => {
 })
 
 const addDatepickerStyles = () => {
-  // Проверяем, добавлены ли стили
   if (document.getElementById('datepicker-custom-styles')) {
     return
   }
@@ -926,7 +958,7 @@ const addDatepickerStyles = () => {
   style.id = 'datepicker-custom-styles'
   style.textContent = `
     .air-datepicker-overlay {
-      background: rgba(0, 0, 0, 0.5) !important;
+      background: transparent !important;
       z-index: 10000 !important;
       position: fixed !important;
       top: 0 !important;
@@ -934,13 +966,21 @@ const addDatepickerStyles = () => {
       right: 0 !important;
       bottom: 0 !important;
       cursor: pointer !important;
+      backdrop-filter: none !important;
+      transition: background 0.3s ease !important;
+    }
+
+    .dark-theme-datepicker .air-datepicker-overlay {
+      background: transparent !important;
+      backdrop-filter: none !important;
     }
     
+    /* СВЕТЛАЯ ТЕМА КАЛЕНДАРЯ ПО УМОЛЧАНИЮ - БЕЛЫЙ ФОН */
     .air-datepicker {
       z-index: 10001 !important;
       background: #FFFFFF !important;
       color: #242527 !important;
-      border: 1px solid var(--border-color) !important;
+      border: 1px solid #43098F !important;
       font-family: 'Space Mono', monospace !important;
       position: fixed !important;
       top: 50% !important;
@@ -952,7 +992,50 @@ const addDatepickerStyles = () => {
       width: 320px !important;
     }
 
-    /* Текущая дата - белый текст на фиолетовом фоне #43098F */
+    /* ТЕМНАЯ ТЕМА ДЛЯ КАЛЕНДАРЯ - ЧЕРНЫЙ ФОН */
+    .air-datepicker.dark-theme,
+    .dark-theme-datepicker .air-datepicker {
+      background: #000000 !important;
+      color: #FFFFFF !important;
+      border-color: #AA70F5 !important;
+      box-shadow: 0 10px 30px rgba(170, 112, 245, 0.2) !important;
+    }
+
+    /* Принудительно черный фон для всех элементов календаря в темной теме */
+    .air-datepicker.dark-theme *,
+    .dark-theme-datepicker .air-datepicker * {
+      background: #000000 !important;
+      color: #FFFFFF !important;
+    }
+
+    .air-datepicker.dark-theme .air-datepicker-body,
+    .dark-theme-datepicker .air-datepicker .air-datepicker-body {
+      background: #000000 !important;
+    }
+
+    .air-datepicker.dark-theme .air-datepicker-body *,
+    .dark-theme-datepicker .air-datepicker .air-datepicker-body * {
+      background: #000000 !important;
+      color: #FFFFFF !important;
+    }
+
+    .air-datepicker.dark-theme .air-datepicker-nav,
+    .dark-theme-datepicker .air-datepicker .air-datepicker-nav {
+      background: #000000 !important;
+    }
+
+    .air-datepicker.dark-theme .air-datepicker-nav *,
+    .dark-theme-datepicker .air-datepicker .air-datepicker-nav * {
+      background: #000000 !important;
+      color: #FFFFFF !important;
+    }
+
+    /* Стили для SVG стрелок в календаре */
+    .datepicker-arrow {
+      width: 12px;
+      height: 12px;
+    }
+
     .air-datepicker-cell.-current- {
       color: white !important;
       font-weight: 700 !important;
@@ -973,7 +1056,6 @@ const addDatepickerStyles = () => {
       z-index: -1 !important;
     }
 
-    /* Выбранная дата - белый текст на фиолетовом фоне #43098F */
     .air-datepicker-cell.-selected- {
       background: transparent !important;
       color: white !important;
@@ -995,6 +1077,13 @@ const addDatepickerStyles = () => {
       z-index: -1 !important;
     }
 
+    /* Темная тема для выделенных ячеек */
+    .air-datepicker.dark-theme .air-datepicker-cell.-current-::before,
+    .air-datepicker.dark-theme .air-datepicker-cell.-selected-::before,
+    .dark-theme-datepicker .air-datepicker .air-datepicker-cell.-current-::before,
+    .dark-theme-datepicker .air-datepicker .air-datepicker-cell.-selected-::before {
+      background: #AA70F5 !important;
+    }
 
     .air-datepicker-cell.-current-,
     .air-datepicker-cell.-selected-,
@@ -1005,64 +1094,45 @@ const addDatepickerStyles = () => {
       color: white !important;
     }
 
-    /* Фон для комбинированных состояний */
     .air-datepicker-cell.-current-.-selected-::before,
     .air-datepicker-cell.-selected-.-other-month-::before,
     .air-datepicker-cell.-current-.-other-month-::before {
       background: #43098F !important;
     }
 
-    /* Переопределяем любые возможные конфликтующие стили */
+    .air-datepicker.dark-theme .air-datepicker-cell.-current-.-selected-::before,
+    .air-datepicker.dark-theme .air-datepicker-cell.-selected-.-other-month-::before,
+    .air-datepicker.dark-theme .air-datepicker-cell.-current-.-other-month-::before,
+    .dark-theme-datepicker .air-datepicker .air-datepicker-cell.-current-.-selected-::before,
+    .dark-theme-datepicker .air-datepicker .air-datepicker-cell.-selected-.-other-month-::before,
+    .dark-theme-datepicker .air-datepicker .air-datepicker-cell.-current-.-other-month-::before {
+      background: #AA70F5 !important;
+    }
+
     .air-datepicker-cell.-day-.-current-,
     .air-datepicker-cell.-day-.-selected- {
       color: white !important;
     }
 
-    /* Числа текущего месяца - цвет #43098F */
+    /* Цвет дней в светлой теме */
     .air-datepicker-cell.-day- {
       color: #43098F !important;
     }
 
-    /* Числа вне текущего месяца (другие месяцы)
+    /* Цвет дней в темной теме */
+    .air-datepicker.dark-theme .air-datepicker-cell.-day-,
+    .dark-theme-datepicker .air-datepicker .air-datepicker-cell.-day- {
+      color: #FFFFFF !important;
+    }
+
     .air-datepicker-cell.-day-.-other-month- {
       color: #8E6BBC !important;
       opacity: 0.5 !important;
     }
-    
-    /* Темная тема для календаря */
-    .dark-theme .air-datepicker {
-      background: #000000 !important;
-      color: #FFFFFF !important;
-      border-color: var(--accent-color) !important;
-      font-family: 'Space Mono', monospace !important;
-    }
-    
-    /* Темная тема - текущая дата */
-    .dark-theme .air-datepicker-cell.-current-,
-    .dark-theme .air-datepicker-cell.-selected-,
-    .dark-theme .air-datepicker-cell.-current-.-selected-,
-    .dark-theme .air-datepicker-cell.-current-.-selected-.-other-month-,
-    .dark-theme .air-datepicker-cell.-selected-.-other-month-,
-    .dark-theme .air-datepicker-cell.-current-.-other-month- {
-      color: white !important;
-    }
 
-    .dark-theme .air-datepicker-cell.-current-::before,
-    .dark-theme .air-datepicker-cell.-selected-::before,
-    .dark-theme .air-datepicker-cell.-current-.-selected-::before {
-      background: var(--accent-color) !important;
-    }
-    
-    .dark-theme .air-datepicker-cell.-selected- {
-      color: white !important;
-    }
-    
-    .dark-theme .air-datepicker-cell.-day- {
-      color: var(--text-primary) !important;
-    }
-    
-    .dark-theme .air-datepicker-cell.-day-.-other-month- {
-      color: var(--text-secondary) !important;
+    .air-datepicker.dark-theme .air-datepicker-cell.-day-.-other-month-,
+    .dark-theme-datepicker .air-datepicker .air-datepicker-cell.-day-.-other-month- {
+      color: #BD9BE9 !important;
       opacity: 0.4 !important;
     }
     
@@ -1076,8 +1146,9 @@ const addDatepickerStyles = () => {
       position: relative !important;
     }
     
+    /* Заголовок в светлой теме */
     .air-datepicker-nav--title {
-      color: var(--text-primary) !important;
+      color: #242527 !important;
       font-size: 16px !important;
       font-weight: 700 !important;
       font-family: 'Space Mono', monospace !important;
@@ -1085,9 +1156,15 @@ const addDatepickerStyles = () => {
       margin-right: auto !important;
       text-transform: uppercase !important;
     }
+
+    /* Заголовок в темной теме */
+    .air-datepicker.dark-theme .air-datepicker-nav--title,
+    .dark-theme-datepicker .air-datepicker .air-datepicker-nav--title {
+      color: #FFFFFF !important;
+    }
     
     .air-datepicker-nav--action {
-      background: var(--bg-secondary) !important;
+      background: #ECF6FE !important;
       border-radius: 4px !important;
       width: 32px !important;
       height: 32px !important;
@@ -1107,11 +1184,17 @@ const addDatepickerStyles = () => {
     }
     
     .air-datepicker-nav--action:hover {
-      background: var(--accent-color) !important;
+      background: #43098F !important;
+    }
+
+    .air-datepicker.dark-theme .air-datepicker-nav--action,
+    .dark-theme-datepicker .air-datepicker .air-datepicker-nav--action {
+      background: rgba(170, 112, 245, 0.1) !important;
     }
     
-    .air-datepicker-nav--action:hover path {
-      stroke: white !important;
+    .air-datepicker.dark-theme .air-datepicker-nav--action:hover,
+    .dark-theme-datepicker .air-datepicker .air-datepicker-nav--action:hover {
+      background: #AA70F5 !important;
     }
     
     .air-datepicker-body {
@@ -1124,8 +1207,9 @@ const addDatepickerStyles = () => {
       border: none !important;
     }
     
+    /* Дни недели в светлой теме */
     .air-datepicker-body--day-name {
-      color: var(--text-secondary) !important;
+      color: #242527 !important;
       font-size: 12px !important;
       font-weight: 400 !important;
       text-transform: uppercase !important;
@@ -1134,6 +1218,12 @@ const addDatepickerStyles = () => {
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
+    }
+
+    /* Дни недели в темной теме */
+    .air-datepicker.dark-theme .air-datepicker-body--day-name,
+    .dark-theme-datepicker .air-datepicker .air-datepicker-body--day-name {
+      color: #FFFFFF !important;
     }
     
     .air-datepicker-cell {
@@ -1147,28 +1237,58 @@ const addDatepickerStyles = () => {
     }
     
     .air-datepicker-cell.-day-.-focus- {
-      background: var(--bg-secondary) !important;
+      background: #ECF6FE !important;
+    }
+
+    .air-datepicker.dark-theme .air-datepicker-cell.-day-.-focus-,
+    .dark-theme-datepicker .air-datepicker .air-datepicker-cell.-day-.-focus- {
+      background: rgba(170, 112, 245, 0.1) !important;
     }
     
     .air-datepicker-cell.-day-:hover {
-      background: var(--bg-secondary) !important;
+      background: #ECF6FE !important;
+    }
+
+    .air-datepicker.dark-theme .air-datepicker-cell.-day-:hover,
+    .dark-theme-datepicker .air-datepicker .air-datepicker-cell.-day-:hover {
+      background: rgba(170, 112, 245, 0.1) !important;
     }
     
     .air-datepicker--pointer {
       display: none !important;
     }
-    
-    /* Настройки для темной темы */
-    .dark-theme .air-datepicker-nav--action {
-      background: rgba(170, 112, 245, 0.1) !important;
+
+    .air-datepicker--buttons {
+      border-top: 1px solid #ECF6FE !important;
+      padding-top: 15px !important;
+      margin-top: 15px !important;
     }
-    
-    .dark-theme .air-datepicker-nav--action:hover {
-      background: var(--accent-color) !important;
+
+    .air-datepicker--buttons span {
+      color: #43098F !important;
+      font-weight: 700 !important;
+      font-family: 'Space Mono', monospace !important;
+      transition: var(--transition) !important;
     }
-    
-    .dark-theme .air-datepicker-body--day-name {
-      color: var(--text-primary) !important;
+
+    .air-datepicker--buttons span:hover {
+      color: #36156e !important;
+      background: transparent !important;
+    }
+
+    .air-datepicker.dark-theme .air-datepicker--buttons,
+    .dark-theme-datepicker .air-datepicker .air-datepicker--buttons {
+      border-color: rgba(170, 112, 245, 0.3) !important;
+    }
+
+    .air-datepicker.dark-theme .air-datepicker--buttons span,
+    .dark-theme-datepicker .air-datepicker .air-datepicker--buttons span {
+      color: #AA70F5 !important;
+    }
+
+    .air-datepicker.dark-theme .air-datepicker--buttons span:hover,
+    .dark-theme-datepicker .air-datepicker .air-datepicker--buttons span:hover {
+      color: #BD9BE9 !important;
     }
   `
   document.head.appendChild(style)
@@ -1178,7 +1298,6 @@ onUnmounted(() => {
   if (datepicker) {
     datepicker.destroy()
   }
-  // Remove event listener
   const handleOverlayClick = (e) => {
     if (e.target.classList.contains('air-datepicker-overlay')) {
       datepicker?.hide()
@@ -1186,6 +1305,7 @@ onUnmounted(() => {
   }
   document.removeEventListener('click', handleOverlayClick)
   document.body.style.overflow = ''
+  document.body.classList.remove('dark-theme-datepicker')
 })
 </script>
 
@@ -1376,9 +1496,15 @@ onUnmounted(() => {
     z-index: 10;
   }
 
+  &__select-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
   &__select {
     width: 100%;
-    padding: 1rem 1.25rem;
+    padding: 1rem 3rem 1rem 1.25rem;
     border: 2px solid var(--border-color);
     border-radius: 8px;
     background: var(--input-bg);
@@ -1390,10 +1516,7 @@ onUnmounted(() => {
     cursor: pointer;
     font-family: 'Space Mono', monospace;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23242527' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 1.25rem center;
-    background-size: 12px;
+    background: var(--input-bg);
     height: 56px;
 
     &:focus {
@@ -1410,8 +1533,30 @@ onUnmounted(() => {
     }
   }
 
-  .dark-theme &__select {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23FFFFFF' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  &__select-arrow {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    svg {
+      width: 16px;
+      height: 16px;
+      
+      path {
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        transition: var(--transition);
+      }
+    }
   }
 
   .dark-theme &__clear {
@@ -1434,9 +1579,10 @@ onUnmounted(() => {
     font-family: 'Space Mono', monospace;
 
     &--checkbox {
-      margin-top: 0.5rem;
-      display: block;
-      height: auto;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 20px;
     }
   }
 
@@ -1452,6 +1598,11 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    
+    &--agree {
+      position: relative;
+      padding-bottom: 24px;
+    }
   }
 
   &__checkbox {
@@ -1503,12 +1654,12 @@ onUnmounted(() => {
 
   &__button {
     width: 100%;
-    max-width: 150px;
+    max-width: 160px;
     padding: 1.25rem 1.5rem;
     background: var(--button-bg);
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 12px;
     font-size: 18px;
     font-weight: 700;
     line-height: 20px;
@@ -1533,7 +1684,6 @@ onUnmounted(() => {
       transform: scale(0.98);
     }
 
-    // Стиль когда форма валидна
     &:not(.registration__button--disabled) {
       background: var(--accent-color);
       
@@ -1553,6 +1703,26 @@ onUnmounted(() => {
         background: var(--button-bg);
         box-shadow: none;
       }
+    }
+  }
+
+  :deep(.dark-theme) &__button:not(.registration__button--disabled) {
+    background: #a96ff5 !important;
+    color: #000000 !important;
+    
+    &:hover {
+      background: #524C7A !important;
+      color: #000000 !important;
+    }
+  }
+
+  :deep(.dark-theme) &__button--disabled {
+    background: #a96ff5 !important;
+    color: #000000 !important;
+    
+    &:hover {
+      background: #a96ff5 !important;
+      color: #000000 !important;
     }
   }
 }
@@ -1577,7 +1747,7 @@ onUnmounted(() => {
   }
 
   &__message {
-    color: var(--text-primary);
+    color: var(--success-message-color, #43098F);
     margin-bottom: 2rem;
     line-height: 1.2;
     font-size: 28px;
@@ -1586,10 +1756,14 @@ onUnmounted(() => {
     text-align: center;
   }
 
+  :deep(.dark-theme) .success__message {
+    color: #A96FF5 !important;
+  }
+
   &__button {
     padding: 1.25rem 2rem;
     background: var(--accent-color);
-    color: white;
+    color: #FFFFFF;
     border: none;
     border-radius: 8px;
     font-size: 18px;
@@ -1607,6 +1781,17 @@ onUnmounted(() => {
     &:hover {
       background: var(--accent-hover);
       transform: translateY(-2px);
+      color: #FFFFFF;
+    }
+
+    :deep(.dark-theme) & {
+      background: #615B8A !important;
+      color: #000000 !important;
+      
+      &:hover {
+        background: #524C7A !important;
+        color: #000000 !important;
+      }
     }
   }
 }
