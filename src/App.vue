@@ -4,7 +4,11 @@
       <div class="header__container">
         <div class="header__top">
           <div class="header__logo">
-            <img src="@/assets/logo/logo.svg" alt="CineWorld" class="header__logo-image">
+            <img 
+              :src="isDarkTheme ? logoDark : logoWhite" 
+              alt="CineWorld" 
+              class="header__logo-image"
+            >
             <h1 class="header__logo-text">CineWorld</h1>
           </div>
           <button 
@@ -24,7 +28,7 @@
     </header>
 
     <main class="main">
-      <RegistrationForm />
+      <RegistrationForm :is-dark-theme="isDarkTheme" />
     </main>
   </div>
 </template>
@@ -32,6 +36,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import RegistrationForm from './components/RegistrationForm.vue'
+import logoWhite from '@/assets/logo/logo-white.svg'
+import logoDark from '@/assets/logo/logo-dark.svg'
 
 const isDarkTheme = ref(false)
 
@@ -42,23 +48,9 @@ onMounted(() => {
   }
 })
 
-// Переключение темы
 const toggleTheme = () => {
   isDarkTheme.value = !isDarkTheme.value
   localStorage.setItem('cineworld-theme', isDarkTheme.value ? 'dark' : 'light')
-  
-  // Принудительно обновляем календарь если он открыт
-  setTimeout(() => {
-    const datepickerElement = document.querySelector('.air-datepicker')
-    
-    if (datepickerElement) {
-      if (isDarkTheme.value) {
-        datepickerElement.classList.add('dark-theme')
-      } else {
-        datepickerElement.classList.remove('dark-theme')
-      }
-    }
-  }, 10)
 }
 </script>
 
@@ -90,7 +82,7 @@ const toggleTheme = () => {
   --border-color: #A96FF5;
   --theme-color: #440A8F;
   --success-color: #440A8F;
-  
+  --success-message-color: #43098F;
   
   // Системные цвета
   --error-color: #E7472D;

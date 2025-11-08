@@ -493,7 +493,14 @@
                 type="checkbox"
                 class="registration__checkbox-input"
               >
-              <span class="registration__checkbox-custom"></span>
+              <span class="registration__checkbox-custom">
+                <img 
+                  v-if="formData.subscribe" 
+                  :src="isDarkTheme ? vectorDark : vectorWhite" 
+                  alt="check" 
+                  class="registration__checkbox-icon"
+                >
+              </span>
               <span class="registration__checkbox-text">
                 Subscribe to the latest updates of site materials
               </span>
@@ -509,7 +516,14 @@
                 :class="{ 'registration__input--error': showFieldError('agree') }"
                 @change="handleAgreeChange"
               >
-              <span class="registration__checkbox-custom"></span>
+              <span class="registration__checkbox-custom">
+                <img 
+                  v-if="formData.agree" 
+                  :src="isDarkTheme ? vectorDark : vectorWhite" 
+                  alt="check" 
+                  class="registration__checkbox-icon"
+                >
+              </span>
               <span class="registration__checkbox-text">
                 I accept the terms of the "Personal Data Processing Policy" and, for the purpose of establishing feedback with me, I consent to the processing of my personal data.
               </span>
@@ -547,27 +561,37 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import AirDatepicker from 'air-datepicker'
 import 'air-datepicker/air-datepicker.css'
 
+// Определяем props
+const props = defineProps({
+  isDarkTheme: {
+    type: Boolean,
+    required: true
+  }
+})
+
 // Импорты SVG файлов для стрелок календаря
-import arrowLeftLight from '@/assets/images/arrow-left-light.svg'
-import arrowRightLight from '@/assets/images/arrow-right-light.svg'
+import arrowLeftLight from '@/assets/images/arrow-left-purple.svg'
+import arrowRightLight from '@/assets/images/arrow-right-purple.svg'
 import arrowLeftDark from '@/assets/images/arrow-left-dark.svg'
 import arrowRightDark from '@/assets/images/arrow-right-dark.svg'
 
-// Получаем текущую тему из родительского компонента
-const isDarkTheme = ref(false)
+// Импорты SVG файлов для галочек чекбоксов
+import vectorWhite from '@/assets/images/vector-white.svg'
+import vectorDark from '@/assets/images/vector-dark.svg'
 
-// Функции для получения правильных стрелок
+// Функции для получения правильных стрелок (используем props.isDarkTheme)
 const getDatepickerArrowLeft = () => {
-  return isDarkTheme.value ? arrowLeftDark : arrowLeftLight
+  return props.isDarkTheme ? arrowLeftDark : arrowLeftLight
 }
 
 const getDatepickerArrowRight = () => {
-  return isDarkTheme.value ? arrowRightDark : arrowRightLight
+  return props.isDarkTheme ? arrowRightDark : arrowRightLight
 }
+
 
 // Reactive data
 const formData = reactive({
@@ -690,17 +714,18 @@ const clearField = (fieldName) => {
   clearError(fieldName)
 }
 
-// ИСПРАВЛЕННАЯ ФУНКЦИЯ: Очистка даты рождения
 const clearBirthDate = () => {
   formData.birthDate = ''
   if (datepicker) {
     datepicker.clear()
     datepicker.selectDate(null)
+    // Принудительно обновляем отображение
+    datepicker.update()
   }
-  // Валидируем поле после очистки
-  touched.birthDate = true
-  validateField('birthDate')
-  showErrors.birthDate = true
+  // Сбрасываем состояние валидации
+  touched.birthDate = false
+  errors.birthDate = ''
+  showErrors.birthDate = false
 }
 
 const validateField = (fieldName) => {
@@ -809,7 +834,6 @@ const submitForm = () => {
   }
 }
 
-// Reset form
 const resetForm = () => {
   Object.keys(formData).forEach(key => {
     if (typeof formData[key] === 'boolean') {
@@ -831,9 +855,11 @@ const resetForm = () => {
     showErrors[key] = false
   })
   
+  // Очищаем календарь более надежно
   if (datepicker) {
     datepicker.clear()
     datepicker.selectDate(null)
+    datepicker.update() // Принудительное обновление
   }
   
   isSubmitted.value = false
@@ -855,12 +881,31 @@ const formatDate = (date) => {
   return `${day}.${month}.${year}`
 }
 
+// Функция для обновления темы календаря
+const updateDatepickerTheme = () => {
+  if (datepicker) {
+    const datepickerElement = document.querySelector('.air-datepicker')
+    if (datepickerElement) {
+      if (props.isDarkTheme) {
+        datepickerElement.classList.add('dark-theme')
+      } else {
+        datepickerElement.classList.remove('dark-theme')
+      }
+    }
+  }
+}
+
+// Наблюдаем за изменением темы
+watch(() => props.isDarkTheme, () => {
+  updateDatepickerTheme()
+})
+
 // Datepicker initialization
 onMounted(() => {
   nextTick(() => {
     if (dateInput.value) {
       datepicker = new AirDatepicker(dateInput.value, {
-        autoClose: false,
+        autoClose: true, // Измените на true для автоматического закрытия
         position: 'bottom center',
         container: 'body',
         dateFormat: 'dd.MM.yyyy',
@@ -868,35 +913,33 @@ onMounted(() => {
           document.body.style.overflow = 'hidden'
           addDatepickerStyles()
           
-          // Принудительно применяем тему к календарю
           setTimeout(() => {
-            const appElement = document.getElementById('app')
-            const datepickerElement = document.querySelector('.air-datepicker')
-            
-            if (appElement && appElement.classList.contains('dark-theme')) {
-              isDarkTheme.value = true
-              if (datepickerElement) {
-                datepickerElement.classList.add('dark-theme')
-                document.body.classList.add('dark-theme-datepicker')
-              }
-            } else {
-              isDarkTheme.value = false
-              if (datepickerElement) {
-                datepickerElement.classList.remove('dark-theme')
-                document.body.classList.remove('dark-theme-datepicker')
-              }
-            }
+            updateDatepickerTheme()
           }, 10)
         },
         onHide: () => {
           document.body.style.overflow = ''
-          document.body.classList.remove('dark-theme-datepicker')
         },
         onSelect: ({ date }) => {
           if (date) {
             formData.birthDate = formatDate(date)
             touched.birthDate = true
             validateField('birthDate')
+            showErrors.birthDate = true
+          } else {
+            // Обработка очистки даты
+            formData.birthDate = ''
+            touched.birthDate = true
+            validateField('birthDate')
+            showErrors.birthDate = true
+          }
+        },
+        // Добавьте обработчик для кнопки очистки календаря
+        onRenderCell: ({ date, cellType }) => {
+          if (cellType === 'day') {
+            return {
+              disabled: false
+            }
           }
         },
         locale: {
@@ -918,7 +961,6 @@ onMounted(() => {
           firstDay: 1
         },
         monthsField: 'monthsShort',
-        // Используем правильные SVG файлы для стрелок в зависимости от темы
         prevHtml: `<img src="${getDatepickerArrowLeft()}" alt="prev" class="datepicker-arrow">`,
         nextHtml: `<img src="${getDatepickerArrowRight()}" alt="next" class="datepicker-arrow">`,
         months: [
@@ -937,14 +979,6 @@ onMounted(() => {
         minView: 'days',
         classes: 'custom-datepicker'
       })
-
-      const handleOverlayClick = (e) => {
-        if (e.target.classList.contains('air-datepicker-overlay')) {
-          datepicker.hide()
-        }
-      }
-
-      document.addEventListener('click', handleOverlayClick)
     }
   })
 })
@@ -970,12 +1004,7 @@ const addDatepickerStyles = () => {
       transition: background 0.3s ease !important;
     }
 
-    .dark-theme-datepicker .air-datepicker-overlay {
-      background: transparent !important;
-      backdrop-filter: none !important;
-    }
-    
-    /* СВЕТЛАЯ ТЕМА КАЛЕНДАРЯ ПО УМОЛЧАНИЮ - БЕЛЫЙ ФОН */
+    /* === СВЕТЛАЯ ТЕМА КАЛЕНДАРЯ (БЕЛЫЙ ФОН) === */
     .air-datepicker {
       z-index: 10001 !important;
       background: #FFFFFF !important;
@@ -992,78 +1021,70 @@ const addDatepickerStyles = () => {
       width: 320px !important;
     }
 
-    /* ТЕМНАЯ ТЕМА ДЛЯ КАЛЕНДАРЯ - ЧЕРНЫЙ ФОН */
-    .air-datepicker.dark-theme,
-    .dark-theme-datepicker .air-datepicker {
+    /* === ТЕМНАЯ ТЕМА КАЛЕНДАРЯ (ЧЕРНЫЙ ФОН) === */
+    .air-datepicker.dark-theme {
       background: #000000 !important;
-      color: #FFFFFF !important;
       border-color: #AA70F5 !important;
       box-shadow: 0 10px 30px rgba(170, 112, 245, 0.2) !important;
     }
 
-    /* Принудительно черный фон для всех элементов календаря в темной теме */
-    .air-datepicker.dark-theme *,
-    .dark-theme-datepicker .air-datepicker * {
-      background: #000000 !important;
-      color: #FFFFFF !important;
-    }
-
     .air-datepicker.dark-theme .air-datepicker-body,
-    .dark-theme-datepicker .air-datepicker .air-datepicker-body {
+    .air-datepicker.dark-theme .air-datepicker-nav {
+      background: #000000 !important;
+      border-color: #AA70F5 !important;
+    }
+
+    /* === НАСТРОЙКИ ДЛЯ ТЕМНОЙ ТЕМЫ === */
+
+    /* МЕСЯЦ И ГОД в темной теме */
+    .air-datepicker.dark-theme .air-datepicker-nav--title {
+      color: #BC9AE8 !important;  /* Фиолетовый цвет для месяца и года */
       background: #000000 !important;
     }
 
-    .air-datepicker.dark-theme .air-datepicker-body *,
-    .dark-theme-datepicker .air-datepicker .air-datepicker-body * {
-      background: #000000 !important;
-      color: #FFFFFF !important;
-    }
-
-    .air-datepicker.dark-theme .air-datepicker-nav,
-    .dark-theme-datepicker .air-datepicker .air-datepicker-nav {
+    /* ДНИ НЕДЕЛИ (Пн, Вт, Ср...) в темной теме */
+    .air-datepicker.dark-theme .air-datepicker-body--day-name {
+      color: #FFFFFF !important;  /* Белый цвет для дней недели */
       background: #000000 !important;
     }
 
-    .air-datepicker.dark-theme .air-datepicker-nav *,
-    .dark-theme-datepicker .air-datepicker .air-datepicker-nav * {
+    /* ЦИФРЫ ДНЕЙ в темной теме - ОБЫЧНЫЕ */
+    .air-datepicker.dark-theme .air-datepicker-cell.-day- {
+      color: #A96FF5 !important;        /* Фиолетовый цвет обычных цифр */
       background: #000000 !important;
-      color: #FFFFFF !important;
+      font-weight: 700 !important;      /* Жирный шрифт */
     }
 
-    /* Стили для SVG стрелок в календаре */
-    .datepicker-arrow {
-      width: 12px;
-      height: 12px;
+    /* ЦИФРЫ ДНЕЙ ДРУГИХ МЕСЯЦЕВ в темной теме */
+    .air-datepicker.dark-theme .air-datepicker-cell.-day-.-other-month- {
+      color: #BD9BE9 !important;        /* Светло-фиолетовый цвет */
+      opacity: 0.4 !important;          /* Полупрозрачность */
+      font-weight: 300 !important;      /* Более тонкий шрифт */
     }
 
-    .air-datepicker-cell.-current- {
-      color: white !important;
-      font-weight: 700 !important;
-      position: relative !important;
-      z-index: 1 !important;
+    /* КНОПКИ в темной теме */
+    .air-datepicker.dark-theme .air-datepicker--buttons {
+      border-color: rgba(170, 112, 245, 0.3) !important;
     }
 
-    .air-datepicker-cell.-current-::before {
-      content: '' !important;
-      position: absolute !important;
-      top: 50% !important;
-      left: 50% !important;
-      transform: translate(-50%, -50%) !important;
-      width: 32px !important;
-      height: 32px !important;
-      background: #43098F !important;
-      border-radius: 8px !important;
-      z-index: -1 !important;
+    .air-datepicker.dark-theme .air-datepicker--buttons span {
+      color: #AA70F5 !important;  /* Фиолетовый цвет текста кнопок */
     }
 
-    .air-datepicker-cell.-selected- {
-      background: transparent !important;
-      color: white !important;
-      font-weight: 700 !important;
-      position: relative !important;
-      z-index: 1 !important;
+    /* КНОПКИ НАВИГАЦИИ при наведении в темной теме */
+    .air-datepicker.dark-theme .air-datepicker-nav--action:hover {
+      background: #AA70F5 !important;
     }
 
+    /* ЯЧЕЙКИ ДНЕЙ при наведении в темной теме */
+    .air-datepicker.dark-theme .air-datepicker-cell.-day-:hover {
+      background: rgba(170, 112, 245, 0.1) !important;  /* Светло-фиолетовый фон */
+    }
+
+    /* === ВЫДЕЛЕННЫЕ ЯЧЕЙКИ (для обеих тем) === */
+
+    /* Фон для выделенных ячеек (текущий день, выбранный день) */
+    .air-datepicker-cell.-current-::before,
     .air-datepicker-cell.-selected-::before {
       content: '' !important;
       position: absolute !important;
@@ -1072,70 +1093,100 @@ const addDatepickerStyles = () => {
       transform: translate(-50%, -50%) !important;
       width: 32px !important;
       height: 32px !important;
-      background: #43098F !important;
       border-radius: 8px !important;
       z-index: -1 !important;
     }
 
-    /* Темная тема для выделенных ячеек */
-    .air-datepicker.dark-theme .air-datepicker-cell.-current-::before,
-    .air-datepicker.dark-theme .air-datepicker-cell.-selected-::before,
-    .dark-theme-datepicker .air-datepicker .air-datepicker-cell.-current-::before,
-    .dark-theme-datepicker .air-datepicker .air-datepicker-cell.-selected-::before {
-      background: #AA70F5 !important;
+    /* === СВЕТЛАЯ ТЕМА: ВЫДЕЛЕННЫЕ ЯЧЕЙКИ === */
+    
+    /* Текущий день в светлой теме: квадрат #8E6BBC, цифра БЕЛАЯ */
+    .air-datepicker-cell.-current-::before {
+      background: #8E6BBC !important;  /* Светло-фиолетовый квадрат для текущего дня */
+    }
+    
+    /* Выбранная дата в светлой теме: квадрат #43098F, цифра БЕЛАЯ */
+    .air-datepicker-cell.-selected-::before {
+      background: #43098F !important;  /* Темно-фиолетовый квадрат для выбранной даты */
     }
 
+    /* === ТЕМНАЯ ТЕМА: ВЫДЕЛЕННЫЕ ЯЧЕЙКИ === */
+    
+    /* Текущий день в темной теме: квадрат БЕЛЫЙ, цифра ЧЕРНАЯ */
+    .air-datepicker.dark-theme .air-datepicker-cell.-current-::before {
+      background: #FFFFFF !important;  /* БЕЛЫЙ квадрат для текущего дня */
+    }
+    
+    /* Выбранная дата в темной теме: квадрат #AA70F5, цифра ЧЕРНАЯ */
+    .air-datepicker.dark-theme .air-datepicker-cell.-selected-::before {
+      background: #AA70F5 !important;  /* Фиолетовый квадрат для выбранной даты */
+    }
+
+    /* === ЦВЕТ ЦИФР ВЫДЕЛЕННЫХ ЯЧЕЕК === */
+    
+    /* СВЕТЛАЯ ТЕМА: БЕЛЫЕ цифры выделенных дней */
     .air-datepicker-cell.-current-,
     .air-datepicker-cell.-selected-,
     .air-datepicker-cell.-current-.-selected-,
     .air-datepicker-cell.-current-.-selected-.-other-month-,
     .air-datepicker-cell.-selected-.-other-month-,
-    .air-datepicker-cell.-current-.-other-month- {
-      color: white !important;
+    .air-datepicker-cell.-current-.-other-month-,
+    .air-datepicker-cell.-day-.-current-,
+    .air-datepicker-cell.-day-.-selected- {
+      color: #FFFFFF !important;        /* БЕЛЫЙ цвет цифр выделенных дней в светлой теме */
+      font-weight: 700 !important;      /* Жирный шрифт выделенных дней */
+      background: transparent !important;
+      position: relative !important;
+      z-index: 1 !important;
     }
 
+    /* ТЕМНАЯ ТЕМА: ЧЕРНЫЕ цифры выделенных дней */
+    .air-datepicker.dark-theme .air-datepicker-cell.-current-,
+    .air-datepicker.dark-theme .air-datepicker-cell.-selected-,
+    .air-datepicker.dark-theme .air-datepicker-cell.-current-.-selected-,
+    .air-datepicker.dark-theme .air-datepicker-cell.-current-.-selected-.-other-month-,
+    .air-datepicker.dark-theme .air-datepicker-cell.-selected-.-other-month-,
+    .air-datepicker.dark-theme .air-datepicker-cell.-current-.-other-month-,
+    .air-datepicker.dark-theme .air-datepicker-cell.-day-.-current-,
+    .air-datepicker.dark-theme .air-datepicker-cell.-day-.-selected- {
+      color: #000000 !important;        /* ЧЕРНЫЙ цвет цифр выделенных дней в темной теме */
+    }
+
+    /* Фон для комбинированных состояний в светлой теме */
     .air-datepicker-cell.-current-.-selected-::before,
     .air-datepicker-cell.-selected-.-other-month-::before,
     .air-datepicker-cell.-current-.-other-month-::before {
-      background: #43098F !important;
+      background: #43098F !important;  /* Темно-фиолетовый для комбинированных */
     }
 
+    /* Фон для комбинированных состояний в темной теме */
     .air-datepicker.dark-theme .air-datepicker-cell.-current-.-selected-::before,
     .air-datepicker.dark-theme .air-datepicker-cell.-selected-.-other-month-::before,
-    .air-datepicker.dark-theme .air-datepicker-cell.-current-.-other-month-::before,
-    .dark-theme-datepicker .air-datepicker .air-datepicker-cell.-current-.-selected-::before,
-    .dark-theme-datepicker .air-datepicker .air-datepicker-cell.-selected-.-other-month-::before,
-    .dark-theme-datepicker .air-datepicker .air-datepicker-cell.-current-.-other-month-::before {
-      background: #AA70F5 !important;
+    .air-datepicker.dark-theme .air-datepicker-cell.-current-.-other-month-::before {
+      background: #AA70F5 !important;  /* Фиолетовый для комбинированных состояний */
     }
 
-    .air-datepicker-cell.-day-.-current-,
-    .air-datepicker-cell.-day-.-selected- {
-      color: white !important;
-    }
-
-    /* Цвет дней в светлой теме */
+    /* === СВЕТЛАЯ ТЕМА: ЦВЕТА ОБЫЧНЫХ ЦИФР === */
+    
+    /* Обычные дни в светлой теме */
     .air-datepicker-cell.-day- {
-      color: #43098F !important;
+      color: #43098F !important;  /* Темно-фиолетовые цифры */
     }
 
-    /* Цвет дней в темной теме */
-    .air-datepicker.dark-theme .air-datepicker-cell.-day-,
-    .dark-theme-datepicker .air-datepicker .air-datepicker-cell.-day- {
-      color: #FFFFFF !important;
-    }
-
+    /* Дни других месяцев в светлой теме */
     .air-datepicker-cell.-day-.-other-month- {
-      color: #8E6BBC !important;
-      opacity: 0.5 !important;
+      color: #8E6BBC !important;  /* Светло-фиолетовые цифры */
+      opacity: 0.5 !important;    /* Полупрозрачность */
     }
 
-    .air-datepicker.dark-theme .air-datepicker-cell.-day-.-other-month-,
-    .dark-theme-datepicker .air-datepicker .air-datepicker-cell.-day-.-other-month- {
-      color: #BD9BE9 !important;
-      opacity: 0.4 !important;
+    /* === ОБЩИЕ СТИЛИ ДЛЯ ВСЕХ ТЕМ === */
+
+    /* Стили для SVG стрелок в календаре */
+    .datepicker-arrow {
+      width: 12px;
+      height: 12px;
     }
     
+    /* Навигация */
     .air-datepicker-nav {
       border: none !important;
       padding: 0 0 15px 0 !important;
@@ -1146,7 +1197,7 @@ const addDatepickerStyles = () => {
       position: relative !important;
     }
     
-    /* Заголовок в светлой теме */
+    /* Заголовок (месяц и год) в светлой теме */
     .air-datepicker-nav--title {
       color: #242527 !important;
       font-size: 16px !important;
@@ -1156,15 +1207,9 @@ const addDatepickerStyles = () => {
       margin-right: auto !important;
       text-transform: uppercase !important;
     }
-
-    /* Заголовок в темной теме */
-    .air-datepicker.dark-theme .air-datepicker-nav--title,
-    .dark-theme-datepicker .air-datepicker .air-datepicker-nav--title {
-      color: #FFFFFF !important;
-    }
     
+    /* Кнопки навигации */
     .air-datepicker-nav--action {
-      background: #ECF6FE !important;
       border-radius: 4px !important;
       width: 32px !important;
       height: 32px !important;
@@ -1183,24 +1228,17 @@ const addDatepickerStyles = () => {
       order: 3 !important;
     }
     
+    /* Кнопки навигации при наведении в светлой теме */
     .air-datepicker-nav--action:hover {
       background: #43098F !important;
     }
-
-    .air-datepicker.dark-theme .air-datepicker-nav--action,
-    .dark-theme-datepicker .air-datepicker .air-datepicker-nav--action {
-      background: rgba(170, 112, 245, 0.1) !important;
-    }
     
-    .air-datepicker.dark-theme .air-datepicker-nav--action:hover,
-    .dark-theme-datepicker .air-datepicker .air-datepicker-nav--action:hover {
-      background: #AA70F5 !important;
-    }
-    
+    /* Тело календаря */
     .air-datepicker-body {
       padding: 0 !important;
     }
     
+    /* Заголовки дней недели */
     .air-datepicker-body--day-names {
       margin: 15px 0 10px 0 !important;
       padding: 0 !important;
@@ -1219,13 +1257,8 @@ const addDatepickerStyles = () => {
       align-items: center !important;
       justify-content: center !important;
     }
-
-    /* Дни недели в темной теме */
-    .air-datepicker.dark-theme .air-datepicker-body--day-name,
-    .dark-theme-datepicker .air-datepicker .air-datepicker-body--day-name {
-      color: #FFFFFF !important;
-    }
     
+    /* Общие стили для всех ячеек */
     .air-datepicker-cell {
       height: 32px !important;
       font-size: 14px !important;
@@ -1236,28 +1269,22 @@ const addDatepickerStyles = () => {
       position: relative !important;
     }
     
+    /* Фокус в светлой теме */
     .air-datepicker-cell.-day-.-focus- {
       background: #ECF6FE !important;
     }
-
-    .air-datepicker.dark-theme .air-datepicker-cell.-day-.-focus-,
-    .dark-theme-datepicker .air-datepicker .air-datepicker-cell.-day-.-focus- {
-      background: rgba(170, 112, 245, 0.1) !important;
-    }
     
+    /* Ховер в светлой теме */
     .air-datepicker-cell.-day-:hover {
       background: #ECF6FE !important;
     }
-
-    .air-datepicker.dark-theme .air-datepicker-cell.-day-:hover,
-    .dark-theme-datepicker .air-datepicker .air-datepicker-cell.-day-:hover {
-      background: rgba(170, 112, 245, 0.1) !important;
-    }
     
+    /* Убираем указатель */
     .air-datepicker--pointer {
       display: none !important;
     }
 
+    /* Кнопки очистки/применения */
     .air-datepicker--buttons {
       border-top: 1px solid #ECF6FE !important;
       padding-top: 15px !important;
@@ -1275,24 +1302,10 @@ const addDatepickerStyles = () => {
       color: #36156e !important;
       background: transparent !important;
     }
-
-    .air-datepicker.dark-theme .air-datepicker--buttons,
-    .dark-theme-datepicker .air-datepicker .air-datepicker--buttons {
-      border-color: rgba(170, 112, 245, 0.3) !important;
-    }
-
-    .air-datepicker.dark-theme .air-datepicker--buttons span,
-    .dark-theme-datepicker .air-datepicker .air-datepicker--buttons span {
-      color: #AA70F5 !important;
-    }
-
-    .air-datepicker.dark-theme .air-datepicker--buttons span:hover,
-    .dark-theme-datepicker .air-datepicker .air-datepicker--buttons span:hover {
-      color: #BD9BE9 !important;
-    }
   `
   document.head.appendChild(style)
 }
+
 
 onUnmounted(() => {
   if (datepicker) {
@@ -1305,7 +1318,6 @@ onUnmounted(() => {
   }
   document.removeEventListener('click', handleOverlayClick)
   document.body.style.overflow = ''
-  document.body.classList.remove('dark-theme-datepicker')
 })
 </script>
 
@@ -1619,14 +1631,6 @@ onUnmounted(() => {
     &:checked + .registration__checkbox-custom {
       background-color: var(--accent-color);
       border-color: var(--accent-color);
-      
-      &::after {
-        content: '✓';
-        color: white;
-        font-size: 14px;
-        font-weight: bold;
-        font-family: 'Space Mono', monospace;
-      }
     }
   }
 
@@ -1642,6 +1646,13 @@ onUnmounted(() => {
     flex-shrink: 0;
     transition: var(--transition);
     margin-top: 2px;
+    position: relative;
+  }
+
+  &__checkbox-icon {
+    width: 12px;
+    height: 12px;
+    object-fit: contain;
   }
 
   &__checkbox-text {
@@ -1673,6 +1684,7 @@ onUnmounted(() => {
     display: block;
     position: relative;
     z-index: 10;
+    margin-top: -15px;
 
     &:hover:not(:disabled) {
       background: var(--button-hover);
