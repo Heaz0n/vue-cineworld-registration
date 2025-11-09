@@ -67,7 +67,7 @@ npm -v
 # 1. Клонирование репозитория
      git clone https://github.com/Heaz0n/vue-cineworld-registration
 
-     cd cineworld-registration-form
+     cd vue-cineworld-registration
 
 # 2. Установка зависимостей
 
