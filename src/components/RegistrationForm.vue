@@ -21,7 +21,7 @@
                     'registration__input--error': showFieldError('firstName'),
                     'registration__input--filled': formData.firstName
                   }"
-                  placeholder="Placeholder"
+                  placeholder="Thomas"
                   @blur="handleBlur('firstName')"
                   @input="handleInput('firstName')"
                   @focus="handleFocus('firstName')"
@@ -58,7 +58,7 @@
                     'registration__input--error': showFieldError('lastName'),
                     'registration__input--filled': formData.lastName
                   }"
-                  placeholder="Placeholder"
+                  placeholder="Edison"
                   @blur="handleBlur('lastName')"
                   @input="handleInput('lastName')"
                   @focus="handleFocus('lastName')"
@@ -246,7 +246,7 @@
                     'registration__input--error': showFieldError('firstName'),
                     'registration__input--filled': formData.firstName
                   }"
-                  placeholder="Placeholder"
+                  placeholder="Thomas"
                   @blur="handleBlur('firstName')"
                   @input="handleInput('firstName')"
                   @focus="handleFocus('firstName')"
@@ -359,7 +359,7 @@
                     'registration__input--error': showFieldError('lastName'),
                     'registration__input--filled': formData.lastName
                   }"
-                  placeholder="Placeholder"
+                  placeholder="Edison"
                   @blur="handleBlur('lastName')"
                   @input="handleInput('lastName')"
                   @focus="handleFocus('lastName')"
